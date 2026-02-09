@@ -1,16 +1,15 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Redirecting…</title>
+<meta charset="UTF-8">
 <script>
-(function () {
-  const saved = localStorage.getItem("site_lang");
-  const lang = (saved || navigator.language || "en").toLowerCase();
-  const target = lang.startsWith("tr") ? "/tr/" : "/en/";
-  location.replace(target);
-})();
+  const lang = navigator.language || navigator.userLanguage;
+
+  if (lang.startsWith("tr")) {
+    window.location.href = "/tr/";
+  } else {
+    window.location.href = "/en/";
+  }
 </script>
 </head>
 <body></body>
