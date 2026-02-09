@@ -23,6 +23,17 @@
       --r:18px;
     }
     *{box-sizing:border-box}
+
+    html, body{
+      height:100%;
+      overflow:hidden;
+    }
+    body{
+      position:fixed;
+      inset:0;
+      overscroll-behavior: none;
+    }
+
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -71,7 +82,11 @@
     .wrap{
       max-width:1100px;
       margin:0 auto;
-      padding: 18px 16px 28px;
+      padding: 18px 16px 18px;
+      height: calc(100svh - 64px);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
     }
 
     .hero{
@@ -105,6 +120,10 @@
       background: linear-gradient(180deg, rgba(10,26,58,.65), rgba(8,22,53,.65));
       box-shadow: var(--shadow);
       padding: 16px;
+      flex:1;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
     }
 
     .grid{
@@ -112,6 +131,9 @@
       grid-template-columns: 1fr 360px;
       gap: 16px;
       align-items: stretch;
+      flex:1;
+      min-height:0;
+      overflow:hidden;
     }
     @media (max-width: 900px){
       .grid{grid-template-columns: 1fr;}
@@ -126,7 +148,8 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      min-height: 320px;
+      flex:1;
+      min-height: 0;
     }
 
     canvas{
@@ -302,18 +325,44 @@
       .stats{ gap: 8px; }
       .stat{ padding: 6px 10px; }
 
-      .card{ padding: 12px; }
+      .wrap{ padding: 10px 12px 10px; height: calc(100svh - 58px); }
+
+      .card{ padding: 10px; margin-top: 10px; }
+
+      .grid{ grid-template-columns: 1fr; gap: 12px; }
+
       .canvas-box{ padding: 10px; }
 
-      .help{ display:none; }
-
-      .panel{ padding: 10px; gap: 10px; }
-
-      .dpad{
-        grid-template-columns: 58px 58px 58px;
-        grid-template-rows: 58px 58px 58px;
-        gap: 8px;
+      /* Paneli altta sabitle: mobilde kaydırma yok, tuşlar hep erişilebilir */
+      .panel{
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: max(10px, env(safe-area-inset-bottom));
+        width: min(520px, calc(100vw - 20px));
+        z-index: 20;
+        background: rgba(0,0,0,.22);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 18px 45px rgba(0,0,0,.45);
       }
+
+      /* D-pad daha büyük ve parmak dostu */
+      .dpad{
+        --s: 76px;
+        grid-template-columns: var(--s) var(--s) var(--s);
+        grid-template-rows: var(--s) var(--s) var(--s);
+        gap: 10px;
+        padding-top: 2px;
+      }
+      .dpad button{
+        font-size: 24px;
+        border-radius: 18px;
+      }
+
+      .btn.icon{ width: 52px; height: 52px; border-radius: 16px; font-size: 20px; }
+      .btn{ padding: 12px 16px; border-radius: 16px; }
+
+      .help{ display:none; }
     }
   </style>
 </head>
@@ -383,8 +432,8 @@
             <b>Masaüstü:</b> Ok tuşları veya WASD<br/>
             <b>Mobil:</b> Yön tuşları veya alanda kaydır (swipe)<br/>
             <b>İpucu:</b> Oyun bitince hız slider ile ayarlanır<br/>
-            <b>Oto hız:</b> ⚡ açıkken oyun zamanla hızlanır<br/>
-            <b>Büyük lokma:</b> Sarı yem kısa süreli çıkar, çok puan verir 😄
+            <b>Oto hız:</b> ⚡ açıkken oyun zamanla hızlanır (daha yavaş hızlanır)<br/>
+            <b>Büyük lokma:</b> Sarı lokma ara sıra çıkar, yakalarsan +puan ve ekstra uzarsın 😄
           </div>
         </div>
       </div>
@@ -423,6 +472,7 @@
   // Game state
   let snake, dir, nextDirQueue, food, bigFood;
   let score = 0;
+  let normalEaten = 0;
   let best = Number(localStorage.getItem('snake_best_tr') || '0');
   bestEl.textContent = best;
 
@@ -441,7 +491,7 @@
   let currentSpeed = 8;    // effective speed (auto-accel changes this)
   let autoAccel = true;    // default ON
   let accelTimer = 0;
-  const accelEveryMs = 9000; // every 9s => +1 speed (up to 16)
+  const accelEveryMs = 14000; // every 14s => +1 speed (up to 16)
 
   let stepMs = speedToStepMs(currentSpeed);
 
@@ -529,6 +579,7 @@
 
   function resetGame(){
     score = 0;
+    normalEaten = 0;
     scoreEl.textContent = score;
 
     const mid = Math.floor(GRID/2);
@@ -569,10 +620,10 @@
       const f = {
         x: randInt(0, GRID-1),
         y: randInt(0, GRID-1),
-        value: 5,
-        grow: 3,
+        value: 8,
+        grow: 4,
         kind: 'big',
-        ttl: 3500
+        ttl: 6000
       };
       if (!isOnSnake(f.x, f.y) && !(food && food.x===f.x && food.y===f.y)) return f;
     }
@@ -630,26 +681,38 @@
     }, {passive:false});
   });
 
-  // Swipe on canvas
-  let touchStart = null;
+  // Swipe on canvas (yalnızca oyun alanında)
+  let swipe = null;
+  const SWIPE_MIN = 22;
+
   canvas.addEventListener('pointerdown', (e)=>{
-    touchStart = {x:e.clientX, y:e.clientY, t:performance.now()};
-  }, {passive:true});
+    e.preventDefault();
+    try{ canvas.setPointerCapture(e.pointerId); }catch(_){}
+    swipe = {x:e.clientX, y:e.clientY, done:false};
+  }, {passive:false});
 
-  canvas.addEventListener('pointerup', (e)=>{
-    if(!touchStart) return;
-    const dx = e.clientX - touchStart.x;
-    const dy = e.clientY - touchStart.y;
-    const dist = Math.hypot(dx,dy);
-    touchStart = null;
+  canvas.addEventListener('pointermove', (e)=>{
+    if (!swipe || swipe.done) return;
+    e.preventDefault();
+    const dx = e.clientX - swipe.x;
+    const dy = e.clientY - swipe.y;
+    if (Math.hypot(dx,dy) < SWIPE_MIN) return;
 
-    if (dist < 20) return;
+    swipe.done = true;
     if (Math.abs(dx) > Math.abs(dy)){
       enqueueDir(dx>0 ? 1 : -1, 0);
     }else{
       enqueueDir(0, dy>0 ? 1 : -1);
     }
-  }, {passive:true});
+  }, {passive:false});
+
+  function endSwipe(e){
+    if (!swipe) return;
+    e.preventDefault();
+    swipe = null;
+  }
+  canvas.addEventListener('pointerup', endSwipe, {passive:false});
+  canvas.addEventListener('pointercancel', endSwipe, {passive:false});
 
   // ===== Controls =====
   btnStart.addEventListener('click', ()=>{
@@ -712,6 +775,26 @@
 
   // ===== Responsive canvas sizing =====
   function resizeCanvas(){
+    // Mobilde: panel altta sabit olduğu için canvas genişliğini
+    // hem ekrana hem de kalan yüksekliğe göre ayarla (scroll olmasın).
+    const mobile = window.matchMedia('(max-width: 900px)').matches;
+
+    const topbarH = document.querySelector('.topbar')?.getBoundingClientRect().height || 0;
+    const panelH = mobile ? (document.querySelector('.panel')?.getBoundingClientRect().height || 0) : 0;
+
+    const sidePad = mobile ? 20 : 0;
+    const verticalPad = mobile ? 18 : 0;
+
+    const availH = Math.max(240, window.innerHeight - topbarH - panelH - verticalPad);
+    const availW = Math.max(240, window.innerWidth - sidePad);
+
+    // hedef: kare canvas
+    const targetCss = mobile
+      ? Math.floor(Math.min(availW, availH))
+      : Math.floor(Math.min(520, availW, window.innerHeight*0.78));
+
+    canvas.style.width = targetCss + 'px';
+
     const rect = canvas.getBoundingClientRect();
     const dpr = Math.max(1, window.devicePixelRatio || 1);
 
@@ -794,7 +877,10 @@
       growLeft += 1;
       food = spawnFood();
 
-      if (!bigFood && Math.random() < 0.22){
+      normalEaten += 1;
+
+      // Nokia tarzı: her 7 normal lokmada bir büyük lokma çıkabilir
+      if (!bigFood && (normalEaten % 7 === 0)){
         bigFood = spawnBigFood();
       }
     }
