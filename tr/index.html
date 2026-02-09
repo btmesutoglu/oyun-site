@@ -2,131 +2,84 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mini Oyunlar</title>
 
 <style>
 body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #0f172a;
-    color: white;
-    text-align: center;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f1b2d;
+  color: white;
+  text-align: center;
 }
 
 header {
-    padding: 20px;
-    font-size: 28px;
-    font-weight: bold;
-    background: #020617;
+  background: #0b1323;
+  padding: 20px;
+  position: relative;
 }
 
-.topbar {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    display: flex;
-    gap: 8px;
+.lang-switch {
+  position: absolute;
+  right: 20px;
+  top: 20px;
 }
 
 .lang-btn {
-    background: #1e293b;
-    border: none;
-    color: white;
-    padding: 8px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
+  background: #1f2a44;
+  color: white;
+  padding: 8px 12px;
+  margin-left: 5px;
+  text-decoration: none;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
 }
 
-.lang-btn:hover {
-    background: #334155;
+.flag {
+  width: 18px;
+  height: 12px;
+  margin-right: 6px;
 }
 
-.games {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 20px;
-    padding: 20px;
-    max-width: 900px;
-    margin: auto;
+.container {
+  margin-top: 60px;
 }
 
-.card {
-    background: #1e293b;
-    border-radius: 12px;
-    padding: 20px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.card:hover {
-    background: #334155;
-    transform: scale(1.05);
-}
-
-.card h3 {
-    margin: 10px 0 0;
-}
-
-footer {
-    margin: 40px 0;
-    font-size: 14px;
-    color: #aaa;
+.game-btn {
+  display: inline-block;
+  background: #1f2a44;
+  padding: 20px 40px;
+  margin: 15px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: white;
+  font-size: 18px;
 }
 </style>
 </head>
+
 <body>
 
-<div class="topbar">
-    <button class="lang-btn"
-    onclick="localStorage.setItem('site_lang','tr'); location.href='/tr/';">
-        🇹🇷 Türkçe
-    </button>
+<header>
+  <h1>🎮 Mini Oyunlar</h1>
+  <div class="lang-switch">
+    <a href="/tr/" class="lang-btn">
+      <img src="/tr.svg" class="flag"> Türkçe
+    </a>
+    <a href="/en/" class="lang-btn">
+      <img src="/gb.svg" class="flag"> English
+    </a>
+  </div>
+</header>
 
-    <button class="lang-btn"
-    onclick="localStorage.setItem('site_lang','en'); location.href='/en/';">
-        🇬🇧 English
-    </button>
+<div class="container">
+  <a class="game-btn">🐍 Yılan</a>
+  <a class="game-btn">🏀 Basketbol</a>
+  <a class="game-btn">🏎️ Araba Yarışı</a>
+  <a class="game-btn">🧱 Tuğla Kırıcı</a>
 </div>
-
-<header>🎮 Mini Oyunlar</header>
-
-<div class="games">
-    <div class="card" onclick="openGame('snake')">
-        <h3>🐍 Yılan</h3>
-    </div>
-
-    <div class="card" onclick="openGame('basket')">
-        <h3>🏀 Basket</h3>
-    </div>
-
-    <div class="card" onclick="openGame('car')">
-        <h3>🏎️ Araba</h3>
-    </div>
-
-    <div class="card" onclick="openGame('platform')">
-        <h3>🧱 Platform</h3>
-    </div>
-
-    <div class="card" onclick="openGame('brick')">
-        <h3>🧱 Tuğla Kırma</h3>
-    </div>
-</div>
-
-<footer>
-© 2026 Mini Oyunlar
-</footer>
-
-<script>
-function openGame(game) {
-    if (game === "snake") {
-        location.href = "/snake.html";
-    } else {
-        alert("Bu oyun yakında eklenecek!");
-    }
-}
-</script>
 
 </body>
 </html>
