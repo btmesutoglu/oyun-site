@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Yılan - Mini Oyunlar</title>
+
+  <style>
+    :root{
+      --bg:#071024;
+      --panel:#0b1223;
+      --card:#111c33;
+      --line:rgba(255,255,255,.10);
+      --text:#e8eefc;
+      --muted:#b8c4e6;
+      --btn:#1b2a4a;
+      --btn2:#24345a;
+      --good:#22c55e;
+      --bad:#ef4444;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1000px 500px at 50% 0%, #0d2250 0%, var(--bg) 45%, #050a16 100%);
+      color:var(--text);
+      text-align:center;
+    }
+    header{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(10px);
+      background: rgba(5,10,22,.65);
+      border-bottom: 1px solid var(--line);
+    }
+    .wrap{max-width:980px; margin:0 auto; padding:16px}
+    .top{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .top a{color:var(--text); text-decoration:none; opacity:.9}
+    .top a:hover{opacity:1}
+    h1{margin:14px 0 8px; font-size: clamp(22px, 3vw, 34px);}
+    .meta{
+      display:flex; gap:14px; justify-content:center; flex-wrap:wrap;
+      color:var(--muted); font-weight:600; margin:10px 0 8px;
+    }
+    .panel{
+      background: rgba(11,18,35,.70);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding:16px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+    }
+    .gameArea{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:14px;
+      justify-items:center;
+    }
+    canvas{
+      width: min(92vw, 520px);
+      height: min(92vw, 520px);
+      max-width:520px;
+      max-height:520px;
+      border-radius: 14px;
+      background:#0a1224;
+      border:1px solid var(--line);
+      touch-action: none; /* swipe için */
+    }
+    .controlsRow{
+      display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center;
+    }
+    button{
+      background: rgba(27,42,74,.65);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight:700;
+    }
+    button:hover{ background: rgba(36,52,90,.75); }
+    button:active{ transform: scale(.98); }
+
+    .speedBox{
+      display:flex; align-items:center; gap:10px;
+      background: rgba(17,28,51,.55);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    input[type="range"]{
+      width: 180px;
+    }
+
+    /* Mobil yön tuşları */
+    .dpad{
+      display:grid;
+      grid-template-columns: 70px 70px 70px;
+      grid-template-rows: 70px 70px 70px;
+      gap:10px;
+      justify-content:center;
+      margin-top: 6px;
+      user-select:none;
+    }
+    .dpad button{
+      padding:0;
+      font-size:20px;
+      font-weight:900;
+      width:70px;
+      height:70px;
+    }
+    .dpad .up{grid-column:2; grid-row:1}
+    .dpad .left{grid-column:1; grid-row:2}
+    .dpad .right{grid-column:3; grid-row:2}
+    .dpad .down{grid-column:2; grid-row:3}
+
+    .hint{
+      margin-top: 10px;
+      color: rgba(232,238,252,.75);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    @media (min-width: 860px){
+      .gameArea{
+        grid-template-columns: 1fr 340px;
+        align-items:start;
+      }
+      .side{
+        width:340px;
+        text-align:left;
+      }
+      .dpad{ margin-top: 14px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="wrap top">
+      <div style="font-weight:800">🐍 Yılan</div>
+      <a href="/tr/">← Ana Sayfa</a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <h1>Yılan</h1>
+
+    <div class="meta">
+      <div>Skor: <span id="score">0</span></div>
+      <div>Rekor: <span id="best">0</span></div>
+      <div>Hız: <span id="speedLabel">8</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="gameArea">
+        <canvas id="c" width="520" height="520"></canvas>
+
+        <div class="side">
+          <div class="controlsRow" style="margin-bottom:10px;">
+            <button id="btnStart">Başlat</button>
+            <button id="btnPause">Duraklat</button>
+            <button id="btnRestart">Yeniden</button>
+          </div>
+
+          <div class="controlsRow" style="margin-bottom:10px;">
+            <div class="speedBox">
+              <span style="font-weight:800;">Hız</span>
+              <button id="slower" title="Yavaşlat">−</button>
+              <input id="speed" type="range" min="3" max="18" step="1" value="8" />
+              <button id="faster" title="Hızlandır">+</button>
+            </div>
+          </div>
+
+          <div class="dpad" aria-label="Yön tuşları">
+            <button class="up" data-dir="U">▲</button>
+            <button class="left" data-dir="L">◀</button>
+            <button class="right" data-dir="R">▶</button>
+            <button class="down" data-dir="D">▼</button>
+          </div>
+
+          <div class="hint">
+            <b>Masaüstü:</b> Ok tuşları / WASD<br/>
+            <b>Mobil:</b> Yön tuşları veya canvas üzerinde kaydır (swipe)<br/>
+            <b>İpucu:</b> Hızı slider veya +/− ile ayarlayabilirsin.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+
+  const scoreEl = document.getElementById("score");
+  const bestEl = document.getElementById("best");
+  const speedRange = document.getElementById("speed");
+  const speedLabel = document.getElementById("speedLabel");
+
+  const btnStart = document.getElementById("btnStart");
+  const btnPause = document.getElementById("btnPause");
+  const btnRestart = document.getElementById("btnRestart");
+  const btnSlower = document.getElementById("slower");
+  const btnFaster = document.getElementById("faster");
+
+  const GRID = 20;
+  const CELL = canvas.width / GRID;
+
+  let snake, dir, food, score, best, running, paused;
+  let tickMs = 125;
+  let timer = null;
+
+  best = Number(localStorage.getItem("snake_best") || 0);
+  bestEl.textContent = best;
+
+  function speedToTick(s) {
+    // s: 3..18 -> ms: yavaş(240) .. hızlı(70)
+    const minMs = 70;
+    const maxMs = 240;
+    const t = (s - 3) / (18 - 3);
+    return Math.round(maxMs - t * (maxMs - minMs));
+  }
+
+  function setSpeed(s) {
+    const v = Math.max(3, Math.min(18, Number(s)));
+    speedRange.value = String(v);
+    speedLabel.textContent = String(v);
+    tickMs = speedToTick(v);
+  }
+
+  function reset() {
+    snake = [{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+    dir = {x:1,y:0};
+    score = 0;
+    running = false;
+    paused = false;
+    scoreEl.textContent = "0";
+    setSpeed(speedRange.value);
+    spawnFood();
+    draw();
+  }
+
+  function spawnFood() {
+    while (true) {
+      const fx = Math.floor(Math.random() * GRID);
+      const fy = Math.floor(Math.random() * GRID);
+      if (!snake.some(s => s.x === fx && s.y === fy)) {
+        food = {x: fx, y: fy};
+        return;
+      }
+    }
+  }
+
+  function setDir(nx, ny) {
+    // ters dönüş engeli
+    if (snake.length > 1 && nx === -dir.x && ny === -dir.y) return;
+    dir = {x: nx, y: ny};
+  }
+
+  function startLoop() {
+    if (timer) clearTimeout(timer);
+    const step = () => {
+      if (!running || paused) return;
+      tick();
+      timer = setTimeout(step, tickMs);
+    };
+    timer = setTimeout(step, tickMs);
+  }
+
+  function tick() {
+    const head = snake[0];
+    const nh = {x: head.x + dir.x, y: head.y + dir.y};
+
+    // duvar (wrap değil, çarpınca biter)
+    if (nh.x < 0 || nh.x >= GRID || nh.y < 0 || nh.y >= GRID) {
+      gameOver();
+      return;
+    }
+    // kendi içine çarpma
+    if (snake.some((s,i)=> i!==0 && s.x===nh.x && s.y===nh.y)) {
+      gameOver();
+      return;
+    }
+
+    snake.unshift(nh);
+
+    if (nh.x === food.x && nh.y === food.y) {
+      score++;
+      scoreEl.textContent = String(score);
+      if (score > best) {
+        best = score;
+        bestEl.textContent = String(best);
+        localStorage.setItem("snake_best", String(best));
+      }
+      spawnFood();
+    } else {
+      snake.pop();
+    }
+
+    draw();
+  }
+
+  function gameOver() {
+    running = false;
+    paused = false;
+    if (timer) clearTimeout(timer);
+    timer = null;
+    draw(true);
+  }
+
+  function draw(over = false) {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // hafif grid
+    ctx.globalAlpha = 0.15;
+    ctx.strokeStyle = "#ffffff";
+    for (let i = 1; i < GRID; i++) {
+      ctx.beginPath(); ctx.moveTo(i*CELL,0); ctx.lineTo(i*CELL,canvas.height); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,i*CELL); ctx.lineTo(canvas.width,i*CELL); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // food
+    ctx.fillStyle = "#ef4444";
+    ctx.fillRect(food.x*CELL+2, food.y*CELL+2, CELL-4, CELL-4);
+
+    // snake
+    snake.forEach((s,i)=>{
+      ctx.fillStyle = i===0 ? "#22c55e" : "#16a34a";
+      ctx.fillRect(s.x*CELL+2, s.y*CELL+2, CELL-4, CELL-4);
+    });
+
+    if (over) {
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 36px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("Oyun Bitti", canvas.width/2, canvas.height/2 - 10);
+      ctx.font = "16px Arial";
+      ctx.fillText("Yeniden için 'Yeniden' bas", canvas.width/2, canvas.height/2 + 24);
+    }
+  }
+
+  // Klavye (oklar + WASD)
+  window.addEventListener("keydown", (e) => {
+    const k = e.key.toLowerCase();
+    if (k === "arrowup" || k === "w") setDir(0,-1);
+    if (k === "arrowdown" || k === "s") setDir(0,1);
+    if (k === "arrowleft" || k === "a") setDir(-1,0);
+    if (k === "arrowright" || k === "d") setDir(1,0);
+    if (k === " "){ // space pause/resume
+      if (!running) return;
+      paused = !paused;
+      if (!paused) startLoop();
+      draw();
+    }
+  });
+
+  // Mobil tuşlar (touch + click)
+  document.querySelectorAll(".dpad button").forEach(btn => {
+    const handle = (e) => {
+      e.preventDefault();
+      const d = btn.dataset.dir;
+      if (d==="U") setDir(0,-1);
+      if (d==="D") setDir(0,1);
+      if (d==="L") setDir(-1,0);
+      if (d==="R") setDir(1,0);
+    };
+    btn.addEventListener("touchstart", handle, {passive:false});
+    btn.addEventListener("click", handle);
+  });
+
+  // Swipe (canvas üzerinde)
+  let sx=0, sy=0;
+  canvas.addEventListener("touchstart", (e)=>{
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+  }, {passive:true});
+  canvas.addEventListener("touchend", (e)=>{
+    const ex = e.changedTouches[0].clientX;
+    const ey = e.changedTouches[0].clientY;
+    const dx = ex - sx;
+    const dy = ey - sy;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 10) setDir(1,0);
+      else if (dx < -10) setDir(-1,0);
+    } else {
+      if (dy > 10) setDir(0,1);
+      else if (dy < -10) setDir(0,-1);
+    }
+  }, {passive:true});
+
+  // Hız kontrol
+  speedRange.addEventListener("input", () => {
+    setSpeed(speedRange.value);
+    if (running && !paused) startLoop();
+  });
+  btnSlower.onclick = () => {
+    setSpeed(Number(speedRange.value) - 1);
+    if (running && !paused) startLoop();
+  };
+  btnFaster.onclick = () => {
+    setSpeed(Number(speedRange.value) + 1);
+    if (running && !paused) startLoop();
+  };
+
+  // Butonlar
+  btnStart.onclick = () => {
+    if (!running) {
+      running = true;
+      paused = false;
+      startLoop();
+    } else {
+      paused = false;
+      startLoop();
+    }
+  };
+  btnPause.onclick = () => {
+    if (!running) return;
+    paused = true;
+  };
+  btnRestart.onclick = () => {
+    reset();
+    running = true;
+    paused = false;
+    startLoop();
+  };
+
+  reset();
+})();
+</script>
+</body>
+</html>
