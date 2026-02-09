@@ -2,356 +2,227 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Yılan | Mini Oyunlar</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Yılan</title>
   <style>
     :root{
-      --bg1:#070b1c;
-      --bg2:#0a1838;
+      --bg0:#060a18;
+      --bg1:#071432;
+      --bg2:#091a3d;
       --card:#0b1430cc;
-      --card2:#0b1430aa;
-      --stroke:#ffffff1a;
+      --stroke:rgba(255,255,255,.10);
       --text:#eaf1ff;
-      --muted:#b7c6e6;
-      --btn:#121e42;
-      --btn2:#172a59;
-      --accent:#48a7ff;
-      --good:#35d07f;
+      --muted:#b8c7ea;
+      --btn:#0d1736;
+      --btn2:#13224c;
+      --accent:#4aa8ff;
+      --snake:#33d17a;
+      --snakeHead:#61ffb0;
       --food:#ff4e57;
     }
-
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
+    *{box-sizing:border-box}
+    html,body{height:100%}
     body{
       margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       color:var(--text);
       background:
-        radial-gradient(1200px 700px at 20% 10%, #0b2a66 0%, transparent 60%),
+        radial-gradient(1100px 700px at 20% 10%, #0b2a66 0%, transparent 60%),
         radial-gradient(900px 500px at 85% 15%, #1a2c5a 0%, transparent 55%),
-        linear-gradient(180deg, var(--bg1), var(--bg2));
+        linear-gradient(180deg,var(--bg0),var(--bg1),var(--bg2));
     }
-
-    a{ color:inherit; text-decoration:none; }
-
-    /* Topbar */
+    a{color:inherit;text-decoration:none}
     .topbar{
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      backdrop-filter: blur(10px);
-      background: linear-gradient(180deg, #050a18cc, #050a1800);
-      border-bottom: 1px solid var(--stroke);
+      position:sticky;top:0;z-index:10;
+      backdrop-filter:blur(10px);
+      background:linear-gradient(180deg,#050a18cc,#050a1800);
+      border-bottom:1px solid var(--stroke);
     }
-    .topbarInner{
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 14px 18px;
-      display:flex;
-      align-items:center;
-      justify-content: space-between;
-      gap:12px;
+    .topbarIn{
+      max-width:1200px;margin:0 auto;padding:14px 18px;
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
     }
-    .brand{
-      display:flex; align-items:center; gap:10px;
-      font-weight:800; letter-spacing: .2px;
-    }
-    .brand .emoji{ font-size: 20px; }
-    .brand .title{ font-size: 16px; opacity:.95; }
-    .nav{
-      display:flex; align-items:center; gap:10px;
-      color: var(--muted);
-      font-weight:600;
-    }
+    .brand{display:flex;align-items:center;gap:10px;font-weight:900}
+    .brand .emoji{font-size:20px}
     .nav a{
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: #0a1430aa;
-      border: 1px solid var(--stroke);
+      padding:10px 12px;border-radius:12px;
+      background:#0a1430aa;border:1px solid var(--stroke);
+      color:var(--muted);font-weight:700;
     }
-    .nav a:hover{ background:#0a1430ee; }
-
-    /* Layout */
-    .layout{
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 18px;
-      display:grid;
-      grid-template-columns: minmax(280px, 1fr) 380px;
-      gap: 16px;
-      align-items: start;
+    .nav a:hover{background:#0a1430ee}
+    .wrap{
+      max-width:1200px;margin:0 auto;padding:18px;
+      display:grid;grid-template-columns:minmax(280px,1fr) 380px;
+      gap:16px;align-items:start;
     }
-
     .card{
-      background: var(--card);
-      border: 1px solid var(--stroke);
-      border-radius: 18px;
-      box-shadow: 0 20px 60px #00000055;
+      background:var(--card);
+      border:1px solid var(--stroke);
+      border-radius:18px;
+      box-shadow:0 18px 55px rgba(0,0,0,.45);
     }
-
-    .gameCard{
-      padding: 16px;
-    }
-
-    .headerBlock{
-      text-align:center;
-      padding: 6px 10px 14px;
-    }
-    .headerBlock h1{
-      margin: 10px 0 6px;
-      font-size: clamp(26px, 3vw, 40px);
-      letter-spacing: .3px;
+    .gameCard{padding:16px}
+    .header{text-align:center;padding:6px 8px 14px}
+    .header h1{
+      margin:10px 0 6px;
+      font-size:clamp(26px,3vw,40px);
+      letter-spacing:.2px;
     }
     .stats{
-      display:flex;
-      justify-content:center;
-      gap: 16px;
-      flex-wrap: wrap;
-      color: var(--muted);
-      font-weight:700;
+      display:flex;justify-content:center;flex-wrap:wrap;
+      gap:14px;color:var(--muted);font-weight:800;
     }
-    .stat strong{ color: var(--text); }
-
-    /* Board wrapper keeps it square & responsive */
+    .stats strong{color:var(--text)}
     .boardWrap{
-      width: 100%;
-      max-width: 720px;
-      margin: 0 auto;
-      aspect-ratio: 1 / 1;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid var(--stroke);
-      background: linear-gradient(180deg, #081432, #061028);
-      position: relative;
-      touch-action: none; /* allow swipe detection */
+      width:100%;
+      max-width:720px;
+      margin:0 auto;
+      aspect-ratio:1/1;
+      border-radius:16px;
+      overflow:hidden;
+      border:1px solid var(--stroke);
+      background:linear-gradient(180deg,#071432,#051028);
+      touch-action:none; /* swipe */
     }
-    canvas{
-      width: 100%;
-      height: 100%;
-      display:block;
-    }
+    canvas{width:100%;height:100%;display:block}
 
-    /* Panel */
-    .panel{
-      padding: 16px;
-      position: sticky;
-      top: 76px;
-    }
-    .panel h2{
-      margin: 8px 0 12px;
-      font-size: 18px;
-      color: var(--muted);
-      font-weight: 800;
-      letter-spacing: .2px;
-    }
-
-    .row{
-      display:flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items:center;
-    }
-
+    .panel{padding:16px;position:sticky;top:76px}
+    .panel h2{margin:8px 0 12px;font-size:18px;color:var(--muted);font-weight:900}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
     .btn{
-      background: linear-gradient(180deg, var(--btn2), var(--btn));
-      border: 1px solid var(--stroke);
-      color: var(--text);
-      padding: 12px 14px;
-      border-radius: 14px;
-      font-weight: 800;
-      cursor:pointer;
+      flex:1;
+      padding:12px 14px;border-radius:14px;
+      background:linear-gradient(180deg,var(--btn2),var(--btn));
+      border:1px solid var(--stroke);
+      color:var(--text);font-weight:900;cursor:pointer;
       user-select:none;
-      min-width: 110px;
-      text-align:center;
     }
-    .btn:hover{ filter: brightness(1.08); }
-    .btn:active{ transform: translateY(1px); }
-    .btn[disabled]{
-      opacity: .45;
-      cursor:not-allowed;
-      transform:none;
-    }
+    .btn:hover{filter:brightness(1.07)}
+    .btn:active{transform:translateY(1px)}
+    .btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
 
-    .speedBox{
-      margin-top: 14px;
-      padding: 12px;
-      border-radius: 16px;
-      background: var(--card2);
-      border: 1px solid var(--stroke);
+    .box{
+      margin-top:14px;padding:12px;border-radius:16px;
+      background:rgba(11,20,48,.65);
+      border:1px solid var(--stroke);
     }
-    .speedLine{
-      display:flex;
-      align-items:center;
-      gap: 10px;
-    }
+    .speedLine{display:flex;align-items:center;gap:10px}
     .pill{
-      width: 46px;
-      height: 42px;
-      border-radius: 14px;
-      border: 1px solid var(--stroke);
-      background: #0a1430cc;
-      color: var(--text);
-      font-weight:900;
-      cursor:pointer;
+      width:46px;height:42px;border-radius:14px;
+      background:#0a1430cc;border:1px solid var(--stroke);
+      color:var(--text);font-weight:900;cursor:pointer;
     }
-    .pill:active{ transform: translateY(1px); }
-    input[type="range"]{
-      width: 100%;
-      accent-color: var(--accent);
-    }
+    input[type="range"]{width:100%;accent-color:var(--accent)}
 
-    /* D-Pad */
-    .dpadWrap{
-      margin-top: 14px;
-      padding: 12px;
-      border-radius: 16px;
-      background: var(--card2);
-      border: 1px solid var(--stroke);
-    }
     .dpad{
-      margin: 10px auto 0;
+      margin:10px auto 0;
       display:grid;
-      grid-template-columns: 76px 76px 76px;
-      grid-template-rows: 76px 76px 76px;
-      gap: 12px;
+      grid-template-columns:74px 74px 74px;
+      grid-template-rows:74px 74px 74px;
+      gap:12px;
       justify-content:center;
-      align-items:center;
-      width: max-content;
+      width:max-content;
     }
     .dpad button{
-      width: 76px;
-      height: 76px;
-      border-radius: 16px;
-      border: 1px solid var(--stroke);
-      background: #0a1430cc;
-      color: var(--text);
-      font-size: 20px;
-      font-weight: 900;
-      cursor: pointer;
+      width:74px;height:74px;border-radius:16px;
+      background:#0a1430cc;border:1px solid var(--stroke);
+      color:var(--text);font-size:20px;font-weight:900;
+      cursor:pointer;
     }
-    .dpad button:hover{ filter: brightness(1.08); }
-    .dpad button:active{ transform: translateY(1px); }
-    .dpad .empty{ visibility:hidden; }
+    .dpad button:hover{filter:brightness(1.07)}
+    .dpad button:active{transform:translateY(1px)}
+    .dpad .empty{visibility:hidden}
 
     .help{
-      margin-top: 14px;
-      color: var(--muted);
-      font-weight: 700;
-      line-height: 1.35;
-      font-size: 13px;
+      margin-top:14px;color:var(--muted);
+      font-weight:750;font-size:13px;line-height:1.35;
     }
-
     .toast{
-      margin-top: 12px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--stroke);
-      background: #0a1430cc;
-      color: var(--muted);
-      font-weight: 700;
-      min-height: 44px;
+      margin-top:12px;
+      padding:10px 12px;border-radius:14px;
+      background:#0a1430cc;border:1px solid var(--stroke);
+      color:var(--muted);font-weight:800;min-height:44px;
     }
 
-    /* Mobile layout: stack and keep panel close */
+    /* Mobile: stack; panel stays close and not “down somewhere” */
     @media (max-width: 900px){
-      .layout{
-        grid-template-columns: 1fr;
-        padding: 14px;
-      }
-      .panel{
-        position: static;
-        max-width: 720px;
-        margin: 0 auto;
-        padding-bottom: calc(14px + env(safe-area-inset-bottom));
-      }
-      .btn{ flex: 1; min-width: 0; }
-      .row{ gap: 10px; }
+      .wrap{grid-template-columns:1fr;padding:14px}
+      .panel{position:static;max-width:720px;margin:0 auto;
+        padding-bottom:calc(14px + env(safe-area-inset-bottom))}
       .dpad{
-        grid-template-columns: 70px 70px 70px;
-        grid-template-rows: 70px 70px 70px;
-        gap: 10px;
+        grid-template-columns:68px 68px 68px;
+        grid-template-rows:68px 68px 68px;
+        gap:10px;
       }
-      .dpad button{
-        width: 70px;
-        height: 70px;
-      }
+      .dpad button{width:68px;height:68px}
     }
   </style>
 </head>
-
 <body>
   <header class="topbar">
-    <div class="topbarInner">
-      <div class="brand">
-        <span class="emoji">🐍</span>
-        <span class="title">Yılan</span>
-      </div>
-      <nav class="nav">
-        <a href="./index.html">← Ana Sayfa</a>
-      </nav>
+    <div class="topbarIn">
+      <div class="brand"><span class="emoji">🐍</span> <span>Yılan</span></div>
+      <nav class="nav"><a href="../index.html">← Ana Sayfa</a></nav>
     </div>
   </header>
 
-  <main class="layout">
-    <!-- GAME -->
+  <main class="wrap">
     <section class="card gameCard">
-      <div class="headerBlock">
+      <div class="header">
         <h1>Yılan</h1>
         <div class="stats">
-          <div class="stat">Skor: <strong id="score">0</strong></div>
-          <div class="stat">Rekor: <strong id="best">0</strong></div>
-          <div class="stat">Hız: <strong id="speedLabel">8</strong></div>
+          <div>Skor: <strong id="score">0</strong></div>
+          <div>Rekor: <strong id="best">0</strong></div>
+          <div>Hız: <strong id="speedLabel">8</strong></div>
         </div>
       </div>
-
-      <div class="boardWrap" id="boardWrap" aria-label="Yılan oyun alanı">
-        <canvas id="game"></canvas>
+      <div class="boardWrap" id="boardWrap">
+        <canvas id="cv"></canvas>
       </div>
     </section>
 
-    <!-- PANEL -->
     <aside class="card panel">
       <h2>Kontroller</h2>
 
       <div class="row">
-        <button class="btn" id="btnStart">Başlat</button>
-        <button class="btn" id="btnPause" disabled>Duraklat</button>
-        <button class="btn" id="btnRestart" disabled>Yeniden</button>
+        <button class="btn" id="start">Başlat</button>
+        <button class="btn" id="pause" disabled>Duraklat</button>
+        <button class="btn" id="restart" disabled>Yeniden</button>
       </div>
 
-      <div class="speedBox">
+      <div class="box">
         <div class="speedLine">
           <strong style="color:var(--muted);min-width:40px;">Hız</strong>
-          <button class="pill" id="btnMinus" aria-label="Hızı azalt">−</button>
+          <button class="pill" id="minus">−</button>
           <input id="speed" type="range" min="3" max="18" value="8" />
-          <button class="pill" id="btnPlus" aria-label="Hızı artır">+</button>
+          <button class="pill" id="plus">+</button>
         </div>
       </div>
 
-      <div class="dpadWrap">
+      <div class="box">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
           <strong style="color:var(--muted);">Yön Tuşları</strong>
-          <span style="color:var(--muted);font-weight:700;font-size:12px;">(Mobil için ideal)</span>
+          <span style="color:var(--muted);font-weight:750;font-size:12px;">Mobil için</span>
         </div>
         <div class="dpad">
-          <button class="empty" tabindex="-1"> </button>
-          <button data-dir="up" aria-label="Yukarı">▲</button>
-          <button class="empty" tabindex="-1"> </button>
+          <button class="empty" tabindex="-1"></button>
+          <button data-dir="up">▲</button>
+          <button class="empty" tabindex="-1"></button>
 
-          <button data-dir="left" aria-label="Sol">◀</button>
-          <button class="empty" tabindex="-1"> </button>
-          <button data-dir="right" aria-label="Sağ">▶</button>
+          <button data-dir="left">◀</button>
+          <button class="empty" tabindex="-1"></button>
+          <button data-dir="right">▶</button>
 
-          <button class="empty" tabindex="-1"> </button>
-          <button data-dir="down" aria-label="Aşağı">▼</button>
-          <button class="empty" tabindex="-1"> </button>
+          <button class="empty" tabindex="-1"></button>
+          <button data-dir="down">▼</button>
+          <button class="empty" tabindex="-1"></button>
         </div>
       </div>
 
       <div class="help">
         <div><b>Masaüstü:</b> Ok tuşları / WASD</div>
         <div><b>Mobil:</b> Yön tuşları veya oyun alanında kaydır (swipe)</div>
-        <div><b>İpucu:</b> Hızı slider ya da +/− ile ayarla</div>
+        <div><b>Boşluk:</b> Duraklat/Devam</div>
       </div>
 
       <div class="toast" id="toast">Hazır. Başlat’a bas.</div>
@@ -359,12 +230,11 @@
   </main>
 
   <script>
-    // ====== Helpers ======
-    const $ = (id) => document.getElementById(id);
-
-    const canvas = $("game");
+    // ===== DOM
+    const $ = (id)=>document.getElementById(id);
+    const cv = $("cv");
     const wrap = $("boardWrap");
-    const ctx = canvas.getContext("2d");
+    const ctx = cv.getContext("2d");
 
     const scoreEl = $("score");
     const bestEl  = $("best");
@@ -372,175 +242,165 @@
     const speedLabel = $("speedLabel");
     const toastEl = $("toast");
 
-    const btnStart = $("btnStart");
-    const btnPause = $("btnPause");
-    const btnRestart = $("btnRestart");
-    const btnMinus = $("btnMinus");
-    const btnPlus  = $("btnPlus");
+    const btnStart = $("start");
+    const btnPause = $("pause");
+    const btnRestart = $("restart");
+    const btnMinus = $("minus");
+    const btnPlus  = $("plus");
 
-    // localStorage best score
-    const LS_BEST = "snake_best_tr";
-    let best = Number(localStorage.getItem(LS_BEST) || "0");
-    bestEl.textContent = String(best);
+    // ===== Game config
+    const GRID = 20; // 20x20
+    const LS_BEST = "snake_best_tr_v2";
 
-    // ====== Game State ======
-    const GRID = 20;          // 20x20
-    let cell = 0;             // computed from canvas size
+    // ===== State
+    let cell = 0;
     let snake = [];
     let dir = {x:1,y:0};
-    let nextDir = {x:1,y:0};
+    let queued = {x:1,y:0};
     let food = {x:10,y:10};
     let score = 0;
+    let best = Number(localStorage.getItem(LS_BEST) || "0");
 
     let running = false;
-    let paused  = false;
-    let gameOver = false;
+    let paused = false;
+    let over = false;
 
-    // speed: higher = faster. We'll map to interval ms.
     let speed = Number(speedEl.value); // 3..18
-    let timer = null;
+    let loop = null;
 
-    // ====== Responsive canvas ======
-    function resizeCanvas(){
-      // ensure square
-      const size = wrap.clientWidth;
-      canvas.width  = Math.floor(size);
-      canvas.height = Math.floor(size);
-      cell = canvas.width / GRID;
-      draw();
+    bestEl.textContent = String(best);
+
+    // ===== Canvas sizing
+    function resize(){
+      const size = Math.floor(wrap.clientWidth);
+      cv.width = size;
+      cv.height = size;
+      cell = cv.width / GRID;
+      render();
     }
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
+    window.addEventListener("resize", resize);
+    resize();
 
-    // ====== Rendering ======
-    function drawGrid(){
-      // background
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-
-      // soft bg
-      const g = ctx.createLinearGradient(0,0,0,canvas.height);
-      g.addColorStop(0, "#071432");
-      g.addColorStop(1, "#051028");
+    // ===== Render
+    function render(){
+      // bg
+      ctx.clearRect(0,0,cv.width,cv.height);
+      const g = ctx.createLinearGradient(0,0,0,cv.height);
+      g.addColorStop(0,"#071432");
+      g.addColorStop(1,"#051028");
       ctx.fillStyle = g;
-      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillRect(0,0,cv.width,cv.height);
 
-      // grid lines
+      // grid
       ctx.strokeStyle = "rgba(255,255,255,0.06)";
       ctx.lineWidth = 1;
       for(let i=1;i<GRID;i++){
-        const p = i * cell;
-        ctx.beginPath(); ctx.moveTo(p,0); ctx.lineTo(p,canvas.height); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0,p); ctx.lineTo(canvas.width,p); ctx.stroke();
+        const p = i*cell;
+        ctx.beginPath(); ctx.moveTo(p,0); ctx.lineTo(p,cv.height); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0,p); ctx.lineTo(cv.width,p); ctx.stroke();
       }
-    }
 
-    function drawFood(){
-      const x = food.x * cell;
-      const y = food.y * cell;
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--food").trim() || "#ff4e57";
-      ctx.fillRect(x+2, y+2, cell-4, cell-4);
-    }
+      // food
+      ctx.fillStyle = getVar("--food");
+      ctx.fillRect(food.x*cell+2, food.y*cell+2, cell-4, cell-4);
 
-    function drawSnake(){
-      const good = getComputedStyle(document.documentElement).getPropertyValue("--good").trim() || "#35d07f";
-      snake.forEach((p, idx) => {
-        ctx.fillStyle = idx === 0 ? "#61ffb0" : good;
+      // snake
+      snake.forEach((p, i)=>{
+        ctx.fillStyle = i===0 ? getVar("--snakeHead") : getVar("--snake");
         ctx.fillRect(p.x*cell+2, p.y*cell+2, cell-4, cell-4);
       });
     }
 
-    function draw(){
-      drawGrid();
-      drawFood();
-      drawSnake();
+    function getVar(name){
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     }
 
-    // ====== Game Logic ======
-    function randCell(){
-      return Math.floor(Math.random()*GRID);
-    }
+    // ===== Helpers
+    function toast(msg){ toastEl.textContent = msg; }
+    function rand(n){ return Math.floor(Math.random()*n); }
+    function opposite(a,b){ return a.x===-b.x && a.y===-b.y; }
 
     function placeFood(){
       while(true){
-        const fx = randCell();
-        const fy = randCell();
-        const hit = snake.some(p => p.x===fx && p.y===fy);
-        if(!hit){
-          food = {x:fx, y:fy};
+        const fx = rand(GRID), fy = rand(GRID);
+        if(!snake.some(s=>s.x===fx && s.y===fy)){
+          food = {x:fx,y:fy};
           return;
         }
       }
     }
 
-    function resetState(){
+    function reset(){
       score = 0;
       scoreEl.textContent = "0";
       dir = {x:1,y:0};
-      nextDir = {x:1,y:0};
+      queued = {x:1,y:0};
       snake = [
-        {x: Math.floor(GRID/2), y: Math.floor(GRID/2)},
-        {x: Math.floor(GRID/2)-1, y: Math.floor(GRID/2)},
-        {x: Math.floor(GRID/2)-2, y: Math.floor(GRID/2)}
+        {x:Math.floor(GRID/2), y:Math.floor(GRID/2)},
+        {x:Math.floor(GRID/2)-1, y:Math.floor(GRID/2)},
+        {x:Math.floor(GRID/2)-2, y:Math.floor(GRID/2)}
       ];
       placeFood();
-      gameOver = false;
+      over = false;
       paused = false;
-      draw();
+      render();
     }
 
-    function setToast(msg){
-      toastEl.textContent = msg;
-    }
-
-    function speedToInterval(s){
-      // s: 3..18 -> ms: slower to faster
-      // 3 => 260ms, 18 => 70ms
+    function intervalFromSpeed(s){
+      // 3 slow -> ~260ms, 18 fast -> ~70ms
       const ms = Math.round(310 - (s*13));
       return Math.max(60, Math.min(320, ms));
     }
 
-    function updateSpeedUI(){
-      speed = Number(speedEl.value);
-      speedLabel.textContent = String(speed);
-      if(running && !paused){
-        startLoop(); // restart timer with new speed
-      }
+    function setSpeed(val){
+      speed = val;
+      speedEl.value = String(val);
+      speedLabel.textContent = String(val);
+      if(running && !paused) startLoop();
     }
 
-    function isOpposite(a, b){
-      return a.x === -b.x && a.y === -b.y;
+    function startLoop(){
+      stopLoop();
+      loop = setInterval(tick, intervalFromSpeed(speed));
+    }
+    function stopLoop(){
+      if(loop){ clearInterval(loop); loop=null; }
     }
 
-    function step(){
-      if(!running || paused || gameOver) return;
+    function applyDir(which){
+      if(which==="up") queued = {x:0,y:-1};
+      if(which==="down") queued = {x:0,y:1};
+      if(which==="left") queued = {x:-1,y:0};
+      if(which==="right") queued = {x:1,y:0};
+    }
 
-      // apply buffered direction (prevents instant reverse)
-      if(!isOpposite(nextDir, dir)){
-        dir = {...nextDir};
-      }
+    // ===== Game tick
+    function tick(){
+      if(!running || paused || over) return;
+
+      if(!opposite(queued, dir)) dir = {...queued};
 
       const head = snake[0];
-      const nh = {x: head.x + dir.x, y: head.y + dir.y};
+      const nh = {x:head.x+dir.x, y:head.y+dir.y};
 
-      // wall collision
-      if(nh.x < 0 || nh.y < 0 || nh.x >= GRID || nh.y >= GRID){
-        lose();
+      // wall
+      if(nh.x<0 || nh.y<0 || nh.x>=GRID || nh.y>=GRID){
+        endGame();
         return;
       }
-
-      // self collision
-      if(snake.some((p, idx) => idx !== 0 && p.x===nh.x && p.y===nh.y)){
-        lose();
+      // self
+      if(snake.some((p,i)=>i!==0 && p.x===nh.x && p.y===nh.y)){
+        endGame();
         return;
       }
 
       snake.unshift(nh);
 
       // eat
-      if(nh.x === food.x && nh.y === food.y){
+      if(nh.x===food.x && nh.y===food.y){
         score++;
         scoreEl.textContent = String(score);
-        if(score > best){
+        if(score>best){
           best = score;
           bestEl.textContent = String(best);
           localStorage.setItem(LS_BEST, String(best));
@@ -550,36 +410,23 @@
         snake.pop();
       }
 
-      draw();
+      render();
     }
 
-    function lose(){
-      gameOver = true;
+    function endGame(){
+      over = true;
       running = false;
       stopLoop();
       btnStart.disabled = false;
       btnPause.disabled = true;
       btnRestart.disabled = false;
-      setToast("Oyun bitti! Yeniden başlatabilirsin.");
+      btnPause.textContent = "Duraklat";
+      toast("Oyun bitti! Yeniden başlatabilirsin.");
     }
 
-    function startLoop(){
-      stopLoop();
-      timer = setInterval(step, speedToInterval(speed));
-    }
-
-    function stopLoop(){
-      if(timer){
-        clearInterval(timer);
-        timer = null;
-      }
-    }
-
-    // ====== Controls (buttons) ======
-    btnStart.addEventListener("click", () => {
-      if(gameOver || !snake.length){
-        resetState();
-      }
+    // ===== Buttons
+    btnStart.addEventListener("click", ()=>{
+      if(!snake.length || over) reset();
       running = true;
       paused = false;
       startLoop();
@@ -587,104 +434,78 @@
       btnStart.disabled = true;
       btnPause.disabled = false;
       btnRestart.disabled = false;
-
-      setToast("Oyun başladı. İyi eğlenceler!");
+      btnPause.textContent = "Duraklat";
+      toast("Oyun başladı!");
     });
 
-    btnPause.addEventListener("click", () => {
+    btnPause.addEventListener("click", ()=>{
       if(!running) return;
       paused = !paused;
       btnPause.textContent = paused ? "Devam" : "Duraklat";
-      setToast(paused ? "Duraklatıldı." : "Devam ediyor.");
+      toast(paused ? "Duraklatıldı." : "Devam ediyor.");
     });
 
-    btnRestart.addEventListener("click", () => {
-      resetState();
+    btnRestart.addEventListener("click", ()=>{
+      reset();
       running = true;
       paused = false;
-      btnPause.textContent = "Duraklat";
+      startLoop();
+
       btnStart.disabled = true;
       btnPause.disabled = false;
       btnRestart.disabled = false;
-      startLoop();
-      setToast("Yeniden başladı!");
+      btnPause.textContent = "Duraklat";
+      toast("Yeniden başladı!");
     });
 
-    // Speed controls
-    speedEl.addEventListener("input", updateSpeedUI);
-    btnMinus.addEventListener("click", () => {
-      speedEl.value = String(Math.max(Number(speedEl.min), Number(speedEl.value)-1));
-      updateSpeedUI();
-    });
-    btnPlus.addEventListener("click", () => {
-      speedEl.value = String(Math.min(Number(speedEl.max), Number(speedEl.value)+1));
-      updateSpeedUI();
+    speedEl.addEventListener("input", ()=> setSpeed(Number(speedEl.value)));
+    btnMinus.addEventListener("click", ()=> setSpeed(Math.max(3, speed-1)));
+    btnPlus.addEventListener("click", ()=> setSpeed(Math.min(18, speed+1)));
+
+    document.querySelectorAll("[data-dir]").forEach(b=>{
+      b.addEventListener("click", ()=> applyDir(b.dataset.dir));
     });
 
-    // D-pad clicks
-    document.querySelectorAll(".dpad button[data-dir]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const d = btn.getAttribute("data-dir");
-        applyDir(d);
-      });
-    });
-
-    // Keyboard
-    window.addEventListener("keydown", (e) => {
+    // ===== Keyboard
+    window.addEventListener("keydown", (e)=>{
       const k = e.key.toLowerCase();
-      if(["arrowup","arrowdown","arrowleft","arrowright","w","a","s","d"].includes(k)){
+      if(["arrowup","arrowdown","arrowleft","arrowright","w","a","s","d"," "].includes(k)){
         e.preventDefault();
       }
-      if(k === "arrowup" || k === "w") applyDir("up");
-      if(k === "arrowdown" || k === "s") applyDir("down");
-      if(k === "arrowleft" || k === "a") applyDir("left");
-      if(k === "arrowright" || k === "d") applyDir("right");
-      if(k === " "){
-        // space pause/resume
-        if(!btnPause.disabled) btnPause.click();
-      }
+      if(k==="arrowup" || k==="w") applyDir("up");
+      if(k==="arrowdown" || k==="s") applyDir("down");
+      if(k==="arrowleft" || k==="a") applyDir("left");
+      if(k==="arrowright" || k==="d") applyDir("right");
+      if(k===" " && !btnPause.disabled) btnPause.click();
     }, {passive:false});
 
-    function applyDir(which){
-      if(which === "up")    nextDir = {x:0,y:-1};
-      if(which === "down")  nextDir = {x:0,y: 1};
-      if(which === "left")  nextDir = {x:-1,y:0};
-      if(which === "right") nextDir = {x: 1,y:0};
-    }
-
-    // Swipe on boardWrap
-    let touchStart = null;
-    wrap.addEventListener("touchstart", (e) => {
-      if(!e.touches || !e.touches[0]) return;
-      const t = e.touches[0];
-      touchStart = {x: t.clientX, y: t.clientY, time: Date.now()};
+    // ===== Swipe on canvas area
+    let startTouch = null;
+    wrap.addEventListener("touchstart", (e)=>{
+      const t = e.touches?.[0]; if(!t) return;
+      startTouch = {x:t.clientX, y:t.clientY};
     }, {passive:true});
 
-    wrap.addEventListener("touchend", (e) => {
-      if(!touchStart) return;
-      const t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
-      if(!t) return;
+    wrap.addEventListener("touchend", (e)=>{
+      if(!startTouch) return;
+      const t = e.changedTouches?.[0]; if(!t) return;
 
-      const dx = t.clientX - touchStart.x;
-      const dy = t.clientY - touchStart.y;
+      const dx = t.clientX - startTouch.x;
+      const dy = t.clientY - startTouch.y;
       const adx = Math.abs(dx), ady = Math.abs(dy);
-
-      // require minimum swipe distance
       const min = 24;
       if(Math.max(adx, ady) < min) return;
 
-      if(adx > ady){
-        applyDir(dx > 0 ? "right" : "left");
-      }else{
-        applyDir(dy > 0 ? "down" : "up");
-      }
-      touchStart = null;
+      if(adx > ady) applyDir(dx>0 ? "right" : "left");
+      else applyDir(dy>0 ? "down" : "up");
+
+      startTouch = null;
     }, {passive:true});
 
-    // Initialize
-    resetState();
-    updateSpeedUI();
-    setToast("Hazır. Başlat’a bas.");
+    // ===== init
+    reset();
+    setSpeed(speed);
+    toast("Hazır. Başlat’a bas.");
   </script>
 </body>
 </html>
