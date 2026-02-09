@@ -1,16 +1,28 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<script>
-  const lang = navigator.language || navigator.userLanguage;
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mini Games</title>
+  <meta name="robots" content="noindex" />
+  <script>
+    (function () {
+      // Önce daha önce seçilmiş dil varsa onu kullan
+      const saved = localStorage.getItem("lang");
+      if (saved === "tr") { location.replace("/tr/"); return; }
+      if (saved === "en") { location.replace("/en/"); return; }
 
-  if (lang.startsWith("tr")) {
-    window.location.href = "/tr/";
-  } else {
-    window.location.href = "/en/";
-  }
-</script>
+      // Basit ülke tahmini: browser dili TR ise TR'ye at
+      // (Cloudflare Pages'de gerçek ülke bilgisi HTML'de yok; en basit yöntem)
+      const lang = (navigator.language || "").toLowerCase();
+      if (lang.startsWith("tr")) location.replace("/tr/");
+      else location.replace("/en/");
+    })();
+  </script>
+  <noscript>
+    <meta http-equiv="refresh" content="0; url=/en/" />
+  </noscript>
 </head>
-<body></body>
+<body>
+</body>
 </html>
