@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Redirecting…</title>
+  <script>
+    (function () {
+      const saved = localStorage.getItem("site_lang"); // kullanıcı seçtiyse
+      const lang = (saved || navigator.language || "en").toLowerCase();
+      const target = lang.startsWith("tr") ? "/tr/" : "/en/";
+      location.replace(target);
+    })();
+  </script>
+</head>
+<body></body>
+</html>
