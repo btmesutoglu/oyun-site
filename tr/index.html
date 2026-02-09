@@ -1,85 +1,55 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<title>Mini Oyunlar</title>
-
-<style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #0f1b2d;
-  color: white;
-  text-align: center;
-}
-
-header {
-  background: #0b1323;
-  padding: 20px;
-  position: relative;
-}
-
-.lang-switch {
-  position: absolute;
-  right: 20px;
-  top: 20px;
-}
-
-.lang-btn {
-  background: #1f2a44;
-  color: white;
-  padding: 8px 12px;
-  margin-left: 5px;
-  text-decoration: none;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  font-size: 14px;
-}
-
-.flag {
-  width: 18px;
-  height: 12px;
-  margin-right: 6px;
-}
-
-.container {
-  margin-top: 60px;
-}
-
-.game-btn {
-  display: inline-block;
-  background: #1f2a44;
-  padding: 20px 40px;
-  margin: 15px;
-  border-radius: 10px;
-  text-decoration: none;
-  color: white;
-  font-size: 18px;
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mini Oyunlar</title>
+  <link rel="stylesheet" href="/assets/style.css" />
 </head>
-
 <body>
+  <header class="header">
+    <div class="container">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo">🎮</div>
+          <h1>Mini Oyunlar</h1>
+        </div>
 
-<header>
-  <h1>🎮 Mini Oyunlar</h1>
-  <div class="lang-switch">
-    <a href="/tr/" class="lang-btn">
-      <img src="/assets/flags/tr.svg" class="flag"> Türkçe
-    </a>
-    <a href="/en/" class="lang-btn">
-      <img src="/assets/flags/gb.svg" class="flag"> English
-    </a>
-  </div>
-</header>
+        <nav class="lang" aria-label="Dil seçimi">
+          <a href="/tr/" data-lang="tr">
+            <img class="flag" src="/assets/flags/tr.svg" alt="Türk bayrağı" />
+            Türkçe
+          </a>
+          <a href="/en/" data-lang="en">
+            <img class="flag" src="/assets/flags/gb.svg" alt="UK flag" />
+            English
+          </a>
+        </nav>
+      </div>
+    </div>
+  </header>
 
-<div class="container">
-  <a class="game-btn">🐍 Yılan</a>
-  <a class="game-btn">🏀 Basketbol</a>
-  <a class="game-btn">🏎️ Araba Yarışı</a>
-  <a class="game-btn">🧱 Tuğla Kırıcı</a>
-</div>
+  <main class="container">
+    <section class="panel">
+      <div class="grid">
+        <a class="card" href="#" onclick="alert('Yakında: Yılan'); return false;">
+          <span class="emoji">🐍</span> Yılan
+        </a>
+        <a class="card" href="#" onclick="alert('Yakında: Basketbol'); return false;">
+          <span class="emoji">🏀</span> Basketbol
+        </a>
+        <a class="card" href="#" onclick="alert('Yakında: Araba Yarışı'); return false;">
+          <span class="emoji">🏎️</span> Araba Yarışı
+        </a>
+        <a class="card" href="#" onclick="alert('Yakında: Tuğla Kırıcı'); return false;">
+          <span class="emoji">🧱</span> Tuğla Kırıcı
+        </a>
+      </div>
 
+      <div class="footer">© 2026 Mini Oyunlar</div>
+    </section>
+  </main>
+
+  <script src="/assets/app.js"></script>
 </body>
 </html>
