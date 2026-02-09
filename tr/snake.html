@@ -98,7 +98,6 @@
       border-radius: 999px;
     }
 
-    /* GAME CARD LAYOUT */
     .card{
       margin-top: 14px;
       border-radius: var(--r);
@@ -108,10 +107,9 @@
       padding: 16px;
     }
 
-    /* Desktop: 2 columns. Mobile: 1 column stacked */
     .grid{
       display:grid;
-      grid-template-columns: 1.2fr .8fr;
+      grid-template-columns: 1fr 360px;
       gap: 16px;
       align-items: stretch;
     }
@@ -119,8 +117,8 @@
       .grid{grid-template-columns: 1fr;}
     }
 
-    /* Canvas box keeps everything together (so controls don't fall down) */
     .canvas-box{
+      position: relative;
       border-radius: var(--r);
       border:1px solid var(--stroke);
       background: rgba(0,0,0,.18);
@@ -131,15 +129,16 @@
       min-height: 320px;
     }
 
-    /* Make canvas responsive but capped (desktop not too huge) */
     canvas{
-      width: min(560px, 92vw);
+      width: min(520px, 70vmin);
+      max-width: 520px;
       aspect-ratio: 1 / 1;
       height:auto;
       border-radius: 14px;
       background: rgba(0,0,0,.22);
       display:block;
-      touch-action: none; /* important for swipe */
+      touch-action: none;
+      outline: none;
     }
     @media (max-width: 420px){
       canvas{ width: min(360px, 94vw); }
@@ -184,6 +183,23 @@
       border-color: rgba(255,77,77,.30);
     }
 
+    .btn.icon{
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius: 14px;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .btn.on{
+      background: rgba(255,204,0,.16);
+      border-color: rgba(255,204,0,.35);
+    }
+
     .speed{
       display:flex;
       gap:10px;
@@ -204,6 +220,14 @@
       background: rgba(255,255,255,.05);
       font-weight:800;
     }
+
+    /* Speed controls locked while playing (except auto) */
+    .speed.locked{ opacity: .75; }
+    .speed.locked input,
+    .speed.locked button:not(#btnAuto){
+      pointer-events: none;
+    }
+    .speed.locked input{ filter: grayscale(1); }
 
     .dpad{
       display:grid;
@@ -248,6 +272,49 @@
       margin-top: 14px;
       font-size: 13px;
     }
+
+    /* Game-over restart overlay button */
+    .overlay-restart{
+      position:absolute;
+      inset: 0;
+      margin:auto;
+      width: 78px;
+      height: 78px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.45);
+      color: rgba(255,255,255,.95);
+      font-size: 34px;
+      font-weight: 900;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      backdrop-filter: blur(8px);
+    }
+    .overlay-restart.show{ display:flex; }
+    .overlay-restart:active{ transform: translateY(1px); }
+
+    /* Mobile: snake odak, daha kompakt */
+    @media (max-width: 900px){
+      .hero{ padding: 8px 6px 6px; }
+      .stats{ gap: 8px; }
+      .stat{ padding: 6px 10px; }
+
+      .card{ padding: 12px; }
+      .canvas-box{ padding: 10px; }
+
+      .help{ display:none; }
+
+      .panel{ padding: 10px; gap: 10px; }
+
+      .dpad{
+        grid-template-columns: 58px 58px 58px;
+        grid-template-rows: 58px 58px 58px;
+        gap: 8px;
+      }
+    }
   </style>
 </head>
 
@@ -275,18 +342,23 @@
     <div class="card">
       <div class="grid">
         <div class="canvas-box">
-          <canvas id="game" width="600" height="600" aria-label="Snake game"></canvas>
+          <canvas id="game" width="600" height="600" aria-label="Snake game" tabindex="0"></canvas>
+
+          <button class="overlay-restart" id="overlayRestart" aria-label="Yeniden başlat" title="Yeniden başlat">↻</button>
         </div>
 
         <div class="panel">
           <div class="row">
-            <button class="btn primary" id="btnStart">Başlat</button>
-            <button class="btn" id="btnPause">Duraklat</button>
-            <button class="btn danger" id="btnReset">Yeniden</button>
+            <button class="btn primary icon" id="btnStart" aria-label="Başlat / Devam" title="Başlat / Devam">▶</button>
+            <button class="btn icon" id="btnPause" aria-label="Duraklat / Devam Et" title="Duraklat / Devam Et">⏸</button>
+            <button class="btn danger icon" id="btnReset" aria-label="Yeniden başlat" title="Yeniden başlat">↻</button>
           </div>
 
           <div class="speed">
             <label>Hız</label>
+
+            <button class="btn icon on" id="btnAuto" aria-label="Otomatik hızlanma" title="Otomatik hızlanma">⚡</button>
+
             <button class="btn" id="btnSlow">−</button>
             <input id="speed" type="range" min="2" max="16" step="1" value="8" />
             <button class="btn" id="btnFast">+</button>
@@ -310,7 +382,8 @@
           <div class="help">
             <b>Masaüstü:</b> Ok tuşları veya WASD<br/>
             <b>Mobil:</b> Yön tuşları veya alanda kaydır (swipe)<br/>
-            <b>İpucu:</b> Hızı slider veya +/− ile değiştir<br/>
+            <b>İpucu:</b> Oyun bitince hız slider ile ayarlanır<br/>
+            <b>Oto hız:</b> ⚡ açıkken oyun zamanla hızlanır<br/>
             <b>Büyük lokma:</b> Sarı yem kısa süreli çıkar, çok puan verir 😄
           </div>
         </div>
@@ -337,10 +410,15 @@
   const btnSlow = document.getElementById('btnSlow');
   const btnFast = document.getElementById('btnFast');
 
+  const btnAuto = document.getElementById('btnAuto');
+  const speedRow = document.querySelector('.speed');
+
+  const overlayRestart = document.getElementById('overlayRestart');
+
   // Grid settings
-  const GRID = 22; // slightly denser than classic
-  let cell = 20;   // computed from canvas size
-  const pad = 1;   // gridline thickness effect
+  const GRID = 22;
+  let cell = 20;
+  const pad = 1;
 
   // Game state
   let snake, dir, nextDirQueue, food, bigFood;
@@ -348,33 +426,111 @@
   let best = Number(localStorage.getItem('snake_best_tr') || '0');
   bestEl.textContent = best;
 
-  // timing
+  // Grow system
+  let growLeft = 0;
+
+  // timing / loop
   let running = false;
   let paused = false;
-  let speed = 8; // 2..16
-  let stepMs = speedToStepMs(speed);
+  let rafId = null;
   let acc = 0;
   let lastTs = 0;
 
+  // Speed system: base (user), current (effective)
+  let baseSpeed = 8;       // user selected (2..16)
+  let currentSpeed = 8;    // effective speed (auto-accel changes this)
+  let autoAccel = true;    // default ON
+  let accelTimer = 0;
+  const accelEveryMs = 9000; // every 9s => +1 speed (up to 16)
+
+  let stepMs = speedToStepMs(currentSpeed);
+
+  let gameOverFlag = false;
+
   function speedToStepMs(s){
-    // Higher speed => smaller step time.
-    // 2 => ~220ms, 16 => ~70ms (feels snappy but controllable)
+    // 2 => ~236ms, 16 => ~68ms
     return Math.round(260 - (s * 12));
   }
 
+  function showRestartOverlay(show){
+    overlayRestart.classList.toggle('show', !!show);
+  }
+
+  function canEditSpeed(){
+    // before first start OR after game over, user can set base speed
+    return (!running) || gameOverFlag;
+  }
+
+  function applyEffectiveSpeed(){
+    stepMs = speedToStepMs(currentSpeed);
+    speedLabelEl.textContent = currentSpeed;
+    speedPillEl.textContent = currentSpeed;
+  }
+
+  function setBaseSpeed(v){
+    baseSpeed = Math.max(2, Math.min(16, v|0));
+    speedEl.value = String(baseSpeed);
+
+    if (!running || gameOverFlag){
+      currentSpeed = baseSpeed;
+      applyEffectiveSpeed();
+    }
+  }
+
   function setSpeed(v){
-    speed = Math.max(2, Math.min(16, v|0));
-    stepMs = speedToStepMs(speed);
-    speedEl.value = String(speed);
-    speedLabelEl.textContent = speed;
-    speedPillEl.textContent = speed;
+    if (!canEditSpeed()){
+      speedEl.value = String(baseSpeed);
+      return;
+    }
+    setBaseSpeed(v);
+    updateSpeedUI();
+  }
+
+  function updateSpeedUI(){
+    btnAuto.classList.toggle('on', autoAccel);
+    speedRow.classList.toggle('locked', running && !gameOverFlag);
+  }
+
+  function updateButtons(){
+    // Start: always ▶ ; Pause toggles ⏸ / ▶
+    btnStart.textContent = '▶';
+    btnPause.textContent = paused ? '▶' : '⏸';
+  }
+
+  function requestLoop(){
+    if (rafId === null){
+      rafId = requestAnimationFrame(loop);
+    }
+  }
+
+  function ensureRunning(){
+    if (!running){
+      running = true;
+      paused = false;
+      lastTs = 0;
+      acc = 0;
+      requestLoop();
+    } else if (paused){
+      paused = false;
+    }
+    updateButtons();
+    updateSpeedUI();
+    try { canvas.focus(); } catch(_) {}
+  }
+
+  function restartAndRun(){
+    running = true;
+    paused = false;
+    resetGame();
+    lastTs = 0;
+    acc = 0;
+    ensureRunning();
   }
 
   function resetGame(){
     score = 0;
     scoreEl.textContent = score;
 
-    // Start centered, going right
     const mid = Math.floor(GRID/2);
     snake = [
       {x: mid-1, y: mid},
@@ -383,36 +539,32 @@
     ];
     dir = {x: 1, y: 0};
     nextDirQueue = [];
+    growLeft = 0;
 
     food = spawnFood();
     bigFood = null;
 
-    paused = false;
-    updateButtons();
-    draw();
-  }
+    // reset speed progression for new run
+    accelTimer = 0;
+    currentSpeed = baseSpeed;
+    applyEffectiveSpeed();
 
-  function updateButtons(){
-    // Start button should not tell "restart" nonsense.
-    btnStart.textContent = running ? 'Devam' : 'Başlat';
-    btnPause.textContent = paused ? 'Devam Et' : 'Duraklat';
+    gameOverFlag = false;
+    showRestartOverlay(false);
+
+    updateButtons();
+    updateSpeedUI();
+    draw();
   }
 
   function spawnFood(){
     while(true){
-      const f = {
-        x: randInt(0, GRID-1),
-        y: randInt(0, GRID-1),
-        value: 1,
-        kind: 'normal'
-      };
+      const f = { x: randInt(0, GRID-1), y: randInt(0, GRID-1), kind:'normal' };
       if (!isOnSnake(f.x, f.y)) return f;
     }
   }
 
   function spawnBigFood(){
-    // 2x2-ish feel but we keep it 1 cell for simplicity; render larger visually.
-    // It gives extra score and extra growth.
     while(true){
       const f = {
         x: randInt(0, GRID-1),
@@ -420,7 +572,7 @@
         value: 5,
         grow: 3,
         kind: 'big',
-        ttl: 3500 // ms
+        ttl: 3500
       };
       if (!isOnSnake(f.x, f.y) && !(food && food.x===f.x && food.y===f.y)) return f;
     }
@@ -429,46 +581,44 @@
   function isOnSnake(x,y){
     return snake.some(p => p.x===x && p.y===y);
   }
-
   function randInt(a,b){ return (Math.random()*(b-a+1)+a)|0; }
 
-  // ===== INPUT (fix for fast direction changes) =====
-  // We queue direction changes and consume one per tick.
-  // This prevents missing rapid key presses.
+  // ===== INPUT (queue) =====
   function enqueueDir(nx, ny){
-    // Prevent 180° reverse relative to "effective" last queued direction (or current dir)
-    const last = nextDirQueue.length ? nextDirQueue[nextDirQueue.length-1] : dir;
-    if (nx === -last.x && ny === -last.y) return; // reverse not allowed
+    // game over sonrası yön tuşu ile de yeniden başlat (kullanıcı hissi iyi)
+    if (gameOverFlag){
+      restartAndRun();
+    } else {
+      ensureRunning();
+    }
 
-    // Avoid duplicates
+    const last = nextDirQueue.length ? nextDirQueue[nextDirQueue.length-1] : dir;
+    if (nx === -last.x && ny === -last.y) return;
     if (nx === last.x && ny === last.y) return;
 
-    // Keep queue small (snappy)
-    if (nextDirQueue.length < 3){
-      nextDirQueue.push({x:nx,y:ny});
-    }else{
-      // Replace the last one if user spams
-      nextDirQueue[nextDirQueue.length-1] = {x:nx,y:ny};
-    }
+    if (nextDirQueue.length >= 6) nextDirQueue.shift();
+    nextDirQueue.push({x:nx,y:ny});
   }
 
   function handleKey(e){
+    if (e.repeat) return;
+
     const k = e.key.toLowerCase();
-    if (['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(k)){
+    if (['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d',' '].includes(k)){
       e.preventDefault();
     }
+
     if (k==='arrowup' || k==='w') enqueueDir(0,-1);
     else if (k==='arrowdown' || k==='s') enqueueDir(0, 1);
     else if (k==='arrowleft' || k==='a') enqueueDir(-1,0);
     else if (k==='arrowright' || k==='d') enqueueDir(1,0);
     else if (k===' '){
-      // Space: pause/resume
       togglePause();
     }
   }
   window.addEventListener('keydown', handleKey, {passive:false});
 
-  // On-screen dpad: use pointerdown (faster than click on mobile)
+  // On-screen dpad
   document.querySelectorAll('.dpad button[data-dir]').forEach(btn=>{
     btn.addEventListener('pointerdown', (e)=>{
       e.preventDefault();
@@ -483,7 +633,6 @@
   // Swipe on canvas
   let touchStart = null;
   canvas.addEventListener('pointerdown', (e)=>{
-    // only for touch/pen; but safe for mouse too
     touchStart = {x:e.clientX, y:e.clientY, t:performance.now()};
   }, {passive:true});
 
@@ -491,15 +640,11 @@
     if(!touchStart) return;
     const dx = e.clientX - touchStart.x;
     const dy = e.clientY - touchStart.y;
-    const adx = Math.abs(dx);
-    const ady = Math.abs(dy);
     const dist = Math.hypot(dx,dy);
     touchStart = null;
 
-    // require minimum swipe distance
     if (dist < 20) return;
-
-    if (adx > ady){
+    if (Math.abs(dx) > Math.abs(dy)){
       enqueueDir(dx>0 ? 1 : -1, 0);
     }else{
       enqueueDir(0, dy>0 ? 1 : -1);
@@ -508,16 +653,11 @@
 
   // ===== Controls =====
   btnStart.addEventListener('click', ()=>{
-    if (!running){
-      running = true;
-      paused = false;
-      lastTs = 0;
-      acc = 0;
-      requestAnimationFrame(loop);
-    }else{
-      paused = false;
+    if (gameOverFlag){
+      restartAndRun();
+      return;
     }
-    updateButtons();
+    ensureRunning();
   });
 
   function togglePause(){
@@ -532,37 +672,52 @@
       paused = true;
       lastTs = 0;
       acc = 0;
-      requestAnimationFrame(loop);
+      requestLoop();
     }else{
       togglePause();
     }
+    updateButtons();
+    updateSpeedUI();
   });
 
   btnReset.addEventListener('click', ()=>{
-    running = true;   // keep running after reset
-    paused = false;
-    resetGame();
-    lastTs = 0;
-    acc = 0;
-    updateButtons();
-    requestAnimationFrame(loop);
+    restartAndRun();
   });
 
-  btnSlow.addEventListener('click', ()=> setSpeed(speed-1));
-  btnFast.addEventListener('click', ()=> setSpeed(speed+1));
+  btnSlow.addEventListener('click', ()=> setSpeed(baseSpeed-1));
+  btnFast.addEventListener('click', ()=> setSpeed(baseSpeed+1));
   speedEl.addEventListener('input', ()=> setSpeed(Number(speedEl.value)));
+
+  btnAuto.addEventListener('click', ()=>{
+    autoAccel = !autoAccel;
+    if (!autoAccel){
+      accelTimer = 0;
+      // Auto kapanınca efektif hız base'e dönsün (daha anlaşılır)
+      currentSpeed = baseSpeed;
+      applyEffectiveSpeed();
+    } else {
+      // Auto açılınca; oyun oynanıyorsa timer sıfırlayalım
+      accelTimer = 0;
+      if (!running || gameOverFlag){
+        currentSpeed = baseSpeed;
+        applyEffectiveSpeed();
+      }
+    }
+    updateSpeedUI();
+  });
+
+  overlayRestart.addEventListener('click', ()=>{
+    restartAndRun();
+  });
 
   // ===== Responsive canvas sizing =====
   function resizeCanvas(){
-    // match CSS size but set internal resolution for crisp lines
     const rect = canvas.getBoundingClientRect();
     const dpr = Math.max(1, window.devicePixelRatio || 1);
 
-    // internal size
     canvas.width = Math.round(rect.width * dpr);
-    canvas.height = Math.round(rect.width * dpr); // square
+    canvas.height = Math.round(rect.width * dpr);
 
-    // compute cell size in pixels (internal)
     cell = Math.floor(canvas.width / GRID);
     draw();
   }
@@ -572,15 +727,29 @@
   function tick(dt){
     if (!running || paused) return;
 
+    // Auto acceleration
+    if (autoAccel && !gameOverFlag){
+      accelTimer += dt;
+      while (accelTimer >= accelEveryMs && currentSpeed < 16){
+        accelTimer -= accelEveryMs;
+        currentSpeed += 1;
+        applyEffectiveSpeed();
+      }
+    }
+
     // Big food TTL
     if (bigFood){
       bigFood.ttl -= dt;
       if (bigFood.ttl <= 0) bigFood = null;
     }
 
-    // apply queued direction (one per tick)
-    if (nextDirQueue.length){
-      dir = nextDirQueue.shift();
+    // apply queued direction (at most 1 meaningful turn per tick)
+    while (nextDirQueue.length){
+      const cand = nextDirQueue.shift();
+      if (!(cand.x === -dir.x && cand.y === -dir.y)){
+        dir = cand;
+        break;
+      }
     }
 
     const head = snake[snake.length-1];
@@ -593,48 +762,57 @@
       return;
     }
 
-    // self collision (ignore tail if it moves away)
-    const tail = snake[0];
-    const hitsBody = snake.some((p, idx)=>{
-      // allow moving into current tail position if not growing this tick
+    const willEatNormal = (nx===food.x && ny===food.y);
+    const willEatBig = (bigFood && nx===bigFood.x && ny===bigFood.y);
+    const willGrowThisTick = willEatNormal || willEatBig || (growLeft > 0);
+
+    // collision: allow moving into tail only if tail will move away this tick
+    const tailWillMove = !(willEatNormal || willEatBig || (growLeft > 0));
+    let hits = false;
+    for (let i=0;i<snake.length;i++){
+      const p = snake[i];
       if (p.x===nx && p.y===ny){
-        return !(idx===0 && !(nx===food.x && ny===food.y) && !(bigFood && nx===bigFood.x && ny===bigFood.y));
+        if (i===0 && tailWillMove){
+          // OK: moving into current tail position while tail shifts away
+        } else {
+          hits = true;
+        }
+        break;
       }
-      return false;
-    });
-    if (hitsBody){
+    }
+    if (hits){
       gameOver();
       return;
     }
 
-    // move
+    // move head
     snake.push({x:nx, y:ny});
 
-    let ate = false;
-    let growBy = 0;
-
-    // eat normal
-    if (nx===food.x && ny===food.y){
-      ate = true;
+    // eat / scoring
+    if (willEatNormal){
       score += 1;
-      growBy += 1;
+      growLeft += 1;
       food = spawnFood();
 
-      // chance to spawn big bite sometimes
-      if (!bigFood && Math.random() < 0.22){ // ~1 in 5
+      if (!bigFood && Math.random() < 0.22){
         bigFood = spawnBigFood();
       }
     }
 
-    // eat big
-    if (bigFood && nx===bigFood.x && ny===bigFood.y){
-      ate = true;
+    if (willEatBig){
       score += bigFood.value;
-      growBy += bigFood.grow;
+      growLeft += bigFood.grow;
       bigFood = null;
     }
 
-    // update best
+    // tail handling
+    if (growLeft > 0){
+      growLeft -= 1;
+    } else {
+      snake.shift();
+    }
+
+    // update best / UI
     if (score > best){
       best = score;
       localStorage.setItem('snake_best_tr', String(best));
@@ -642,19 +820,15 @@
     }
     scoreEl.textContent = score;
 
-    // trim tail unless growing
-    const keep = snake.length - 1 - growBy;
-    while (snake.length > keep){
-      snake.shift();
-    }
-
     draw();
   }
 
   function gameOver(){
     paused = true;
+    gameOverFlag = true;
+    showRestartOverlay(true);
     updateButtons();
-    // small visual feedback
+    updateSpeedUI();
     flash();
   }
 
@@ -671,10 +845,8 @@
 
   // ===== Render =====
   function draw(){
-    // background
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    // soft bg
     ctx.fillStyle = 'rgba(0,0,0,.20)';
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
@@ -705,11 +877,13 @@
     }
     ctx.globalAlpha = 1;
 
-    // paused overlay
+    // overlays
     if (!running){
-      overlayText('Başlatmak için “Başlat”');
-    } else if (paused){
+      overlayText('Bir yön tuşuna bas • veya ▶');
+    } else if (paused && !gameOverFlag){
       overlayText('Duraklatıldı');
+    } else if (paused && gameOverFlag){
+      overlayText('Bitti! ↻ ile yeniden');
     }
   }
 
@@ -719,7 +893,7 @@
       roundRect(x*cell + pad, y*cell + pad, cell - pad*2, cell - pad*2, Math.max(6, cell*0.22));
       ctx.fill();
     } else {
-      // big bite: visually larger and glowing
+      // big bite: glowing
       const cx = x*cell + cell/2;
       const cy = y*cell + cell/2;
       const r = cell*0.52;
@@ -728,12 +902,10 @@
       ctx.shadowColor = 'rgba(255,204,0,.45)';
       ctx.shadowBlur = Math.max(8, cell*0.6);
       ctx.fillStyle = 'rgba(255,204,0,0.95)';
-      ctx.beginPath();
-      ctx.roundRect(x*cell + pad, y*cell + pad, cell - pad*2, cell - pad*2, Math.max(8, cell*0.28));
+      roundRect(x*cell + pad, y*cell + pad, cell - pad*2, cell - pad*2, Math.max(8, cell*0.28));
       ctx.fill();
       ctx.restore();
 
-      // tiny highlight
       ctx.fillStyle = 'rgba(255,255,255,.35)';
       ctx.beginPath();
       ctx.arc(cx - r*0.25, cy - r*0.25, r*0.18, 0, Math.PI*2);
@@ -766,17 +938,18 @@
 
   // ===== RAF LOOP =====
   function loop(ts){
+    rafId = null;
+
     if (!running){
       draw();
       return;
     }
+
     if (!lastTs) lastTs = ts;
     const dt = ts - lastTs;
     lastTs = ts;
 
-    // accumulate time and tick with fixed step
     acc += dt;
-    // Avoid spiral of death on background tab
     const maxAcc = stepMs * 5;
     if (acc > maxAcc) acc = maxAcc;
 
@@ -786,18 +959,22 @@
       if (paused) break;
     }
 
-    requestAnimationFrame(loop);
+    requestLoop();
   }
 
   // init
-  setSpeed(8);
+  setBaseSpeed(8);
   resetGame();
   resizeCanvas();
 
-  // Start with running=false (overlay shows start text)
+  // start in idle (overlay text visible)
   running = false;
   paused = false;
+  gameOverFlag = false;
+  showRestartOverlay(false);
   updateButtons();
+  updateSpeedUI();
+  draw();
 })();
 </script>
 </body>
