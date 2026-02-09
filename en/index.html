@@ -25,15 +25,22 @@ header {
     position: absolute;
     top: 15px;
     right: 15px;
+    display: flex;
+    gap: 8px;
 }
 
 .lang-btn {
     background: #1e293b;
     border: none;
     color: white;
-    padding: 8px 12px;
+    padding: 8px 10px;
     border-radius: 6px;
     cursor: pointer;
+    font-size: 14px;
+}
+
+.lang-btn:hover {
+    background: #334155;
 }
 
 .games {
@@ -74,7 +81,12 @@ footer {
 <div class="topbar">
     <button class="lang-btn"
     onclick="localStorage.setItem('site_lang','tr'); location.href='/tr/';">
-        Türkçe
+        🇹🇷 TR
+    </button>
+
+    <button class="lang-btn"
+    onclick="localStorage.setItem('site_lang','en'); location.href='/en/';">
+        🇬🇧 EN
     </button>
 </div>
 
