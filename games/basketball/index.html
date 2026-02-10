@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="tr" data-title-i18n="basket.title">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="/assets/site.css" />
+  <link rel="stylesheet" href="./game.css" />
+  <script src="/assets/site.js" defer></script>
+  <script src="./game.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/">
+        <span class="dot" aria-hidden="true"></span>
+        <span data-i18n="site.title">Mini Oyunlar</span>
+      </a>
+
+      <nav class="nav" aria-label="primary">
+        <a href="/" data-i18n="nav.home">Ana Sayfa</a>
+        <a href="/" data-i18n="nav.games">Oyunlar</a>
+      </nav>
+
+      <div class="lang" aria-label="language switcher">
+        <button type="button" data-lang="tr" aria-pressed="true" title="Türkçe">
+          <img class="flag" src="/assets/flags/tr.svg" alt="TR" />
+          TR
+        </button>
+        <button type="button" data-lang="en" aria-pressed="false" title="English">
+          <img class="flag" src="/assets/flags/en.svg" alt="EN" />
+          EN
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="b-wrap">
+      <div class="b-card">
+        <div class="b-title" data-i18n="basket.title">Basketbol</div>
+        <div class="b-sub" data-i18n="basket.subtitle">Yakında</div>
+        <p class="b-body" data-i18n="basket.body">
+          Bu oyun için farklı bir arayüz ve kurallar tasarlanacak. Altyapı hazır — sadece içerik gelecek.
+        </p>
+        <a class="card-cta" href="/" data-i18n="nav.home">Ana Sayfa</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
