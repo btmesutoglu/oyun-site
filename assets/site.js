@@ -1,7 +1,8 @@
 /**
  * site.js
  * - Language selection (TR/EN) stored in localStorage
- * - Loads /locales/<lang>.json and applies translations on elements with [data-i18n]
+ * - Loads locales/<lang>.json relative to this script location (works on Cloudflare Pages, subpaths, and file://)
+ * - Applies translations on elements with [data-i18n]
  * - Exposes window.__t(key) and window.__setLang(lang)
  */
 (() => {
@@ -21,11 +22,23 @@
     return DEFAULT_LANG;
   }
 
+  // Determine site root relative to the loaded site.js file.
+  function getRootBase() {
+    const scripts = Array.from(document.scripts || []);
+    const me = scripts.find(s => (s.src || "").includes("/assets/site.js")) || scripts.find(s => (s.src || "").endsWith("assets/site.js"));
+    const src = me?.src || (document.currentScript && document.currentScript.src) || "";
+    if (!src) return "./";
+    // src like .../assets/site.js -> root is ../
+    return new URL("../", src).toString();
+  }
+
+  const ROOT = getRootBase();
+
   async function loadDict(lang) {
-    // Using absolute path works best on Cloudflare Pages.
-    const res = await fetch(`/locales/${lang}.json`, { cache: "no-store" });
+    const url = new URL(`locales/${lang}.json`, ROOT).toString();
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`Locale load failed: ${lang}`);
-    return await res.json();
+    dict = await res.json();
   }
 
   function t(key) {
@@ -33,65 +46,65 @@
     return dict[key] ?? key;
   }
 
-  function applyTranslations(root = document) {
-    root.querySelectorAll("[data-i18n]").forEach(el => {
+  function applyTranslations() {
+    document.querySelectorAll("[data-i18n]").forEach(el => {
       const key = el.getAttribute("data-i18n");
       if (!key) return;
       el.textContent = t(key);
     });
-    root.querySelectorAll("[data-i18n-html]").forEach(el => {
-      const key = el.getAttribute("data-i18n-html");
-      if (!key) return;
-      el.innerHTML = t(key);
-    });
-    root.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
-      const key = el.getAttribute("data-i18n-placeholder");
-      if (!key) return;
-      el.setAttribute("placeholder", t(key));
-    });
-    // Title
-    const titleKey = document.documentElement.getAttribute("data-title-i18n");
-    if (titleKey) document.title = t(titleKey);
-  }
 
-  function updateLangButtons(lang) {
+    // Optional: update page title if data-title-i18n is provided on <html>
+    const html = document.documentElement;
+    const titleKey = html.getAttribute("data-title-i18n");
+    if (titleKey) document.title = t(titleKey);
+
+    // Update active lang UI
+    const lang = getLang();
     document.querySelectorAll("[data-lang]").forEach(btn => {
-      const v = btn.getAttribute("data-lang");
-      const pressed = v === lang;
-      btn.setAttribute("aria-pressed", pressed ? "true" : "false");
+      const is = btn.getAttribute("data-lang") === lang;
+      btn.setAttribute("aria-pressed", is ? "true" : "false");
+      btn.classList.toggle("is-active", is);
     });
+
+    // Set <html lang="">
+    document.documentElement.setAttribute("lang", lang);
   }
 
   async function setLang(lang) {
-    if (!SUPPORTED.includes(lang)) lang = DEFAULT_LANG;
+    if (!SUPPORTED.includes(lang)) return;
     localStorage.setItem(LANG_KEY, lang);
-    document.documentElement.lang = lang;
-
-    dict = await loadDict(lang);
-    applyTranslations(document);
-    updateLangButtons(lang);
-
-    // Let games/pages react after translations load:
-    window.dispatchEvent(new CustomEvent("langchange", { detail: { lang } }));
+    await loadDict(lang);
+    applyTranslations();
   }
 
   function wireLangButtons() {
     document.querySelectorAll("[data-lang]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const lang = btn.getAttribute("data-lang") || DEFAULT_LANG;
-        setLang(lang).catch(console.error);
+      btn.addEventListener("click", async () => {
+        const lang = btn.getAttribute("data-lang");
+        if (!lang) return;
+        try {
+          await setLang(lang);
+        } catch (e) {
+          console.error(e);
+        }
       });
     });
   }
 
-  // Expose helpers for game scripts
-  window.__t = t;
-  window.__getLang = getLang;
-  window.__setLang = setLang;
-
-  // Init
-  document.addEventListener("DOMContentLoaded", () => {
+  // Boot
+  (async () => {
+    try {
+      await loadDict(getLang());
+    } catch (e) {
+      console.warn("Locale load failed, continuing with keys.", e);
+      dict = null;
+    }
+    applyTranslations();
     wireLangButtons();
-    setLang(getLang()).catch(console.error);
-  });
+  })();
+
+  window.__t = t;
+  window.__setLang = setLang;
+  window.__getLang = getLang;
+  window.__rootBase = ROOT;
 })();
