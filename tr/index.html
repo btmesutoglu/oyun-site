@@ -1,55 +1,39 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="tr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mini Oyunlar</title>
-  <link rel="stylesheet" href="../assets/style.css" />
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Mini Oyunlar</title>
+<link href="../assets/style.css" rel="stylesheet"/>
 </head>
 <body>
-  <header class="header">
-    <div class="container">
-      <div class="topbar">
-        <div class="brand">
-          <div class="logo">🎮</div>
-          <h1>Mini Oyunlar</h1>
-        </div>
-
-        <nav class="lang" aria-label="Dil seçimi">
-          <a href="./" data-lang="tr">
-            <img class="flag" src="../assets/flags/tr.svg" alt="Türk bayrağı" />
-            Türkçe
-          </a>
-          <a href="../en/" data-lang="en">
-            <img class="flag" src="../assets/flags/gb.svg" alt="UK flag" />
-            English
-          </a>
-        </nav>
-      </div>
-    </div>
-  </header>
-
-  <main class="container">
-    <section class="panel">
-      <div class="grid">
-        <a class="card" href="./games/snake/">
-          <span class="emoji">🐍</span> Yılan
+<header class="topbar"><div class="topbar-inner"><div class="brand">
+<div class="logo">🎮</div>
+<h1>Mini Oyunlar</h1>
+</div><nav aria-label="Dil seçimi" class="lang">
+<a data-lang="tr" href="./"><img alt="Türk bayrağı" class="flag" src="../assets/flags/tr.svg"/><span class="label">Türkçe</span></a>
+<a data-lang="en" href="../en/"><img alt="UK flag" class="flag" src="../assets/flags/gb.svg"/><span class="label">English</span></a>
+</nav></div></header>
+<main class="container">
+<section class="panel">
+<div class="grid">
+<a class="card" href="./games/snake/">
+<span class="emoji">🐍</span> Yılan
         </a>
-        <a class="card" href="#" onclick="alert('Yakında: Basketbol'); return false;">
-          <span class="emoji">🏀</span> Basketbol
+<a class="card" href="#" onclick="alert('Yakında: Basketbol'); return false;">
+<span class="emoji">🏀</span> Basketbol
         </a>
-        <a class="card" href="#" onclick="alert('Yakında: Araba Yarışı'); return false;">
-          <span class="emoji">🏎️</span> Araba Yarışı
+<a class="card" href="#" onclick="alert('Yakında: Araba Yarışı'); return false;">
+<span class="emoji">🏎️</span> Araba Yarışı
         </a>
-        <a class="card" href="#" onclick="alert('Yakında: Tuğla Kırıcı'); return false;">
-          <span class="emoji">🧱</span> Tuğla Kırıcı
+<a class="card" href="#" onclick="alert('Yakında: Tuğla Kırıcı'); return false;">
+<span class="emoji">🧱</span> Tuğla Kırıcı
         </a>
-      </div>
-
-      <div class="footer">© 2026 Mini Oyunlar</div>
-    </section>
-  </main>
-
-  <script src="../assets/app.js"></script>
+</div>
+<div class="footer">© 2026 Mini Oyunlar</div>
+</section>
+</main>
+<script src="../assets/app.js"></script>
 </body>
 </html>
