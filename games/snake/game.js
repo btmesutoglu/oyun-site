@@ -1,264 +1,471 @@
 /**
- * Snake game.js
- * - Pure game logic + minimal UI binding
- * - Reads translations via window.__t() (from /assets/site.js)
+ * Snake - game.js
+ * Goals:
+ * - Fast input (Arrow keys + WASD) + prevent scroll
+ * - Mobile controls: swipe/drag on the board + on-screen D‑pad + buttons
+ * - Wrap-around world (no wall death)
+ * - Correct self-collision (tail edge-case handled)
+ * - Bonus food (bigger square, timed) in a Nokia 3310-ish spirit
+ *
+ * i18n: uses window.__t(key) from /assets/site.js when available
  */
-
 (() => {
   const canvas = document.getElementById("c");
   const ctx = canvas.getContext("2d");
 
   const scoreEl = document.getElementById("score");
-  const bestEl = document.getElementById("best");
+  const bestEl  = document.getElementById("best");
   const overlay = document.getElementById("overlay");
   const ovTitle = document.getElementById("ov-title");
-  const ovSub = document.getElementById("ov-sub");
+  const ovSub   = document.getElementById("ov-sub");
 
-  const BEST_KEY = "snake_best_v1";
+  const BEST_KEY = "snake_best_v2";
 
-  const GRID = 28;                 // 28x28 cells
-  const CELL = canvas.width / GRID;
+  // Game tuning
+  const GRID = 28;              // 28x28 cells
+  const STEP_MS = 78;           // base speed (lower = faster)
+  const MIN_SWIPE = 12;         // px threshold for direction change
 
-  let snake, dir, nextDir, food, score, running, paused, raf;
+  // Bonus tuning
+  const BONUS_SCORE = 50;
+  const BONUS_TTL_STEPS = 110;  // ~ 8-9 seconds depending on speed
+  const BONUS_EVERY = 5;        // guaranteed bonus every 5 normal foods
+  const BONUS_RANDOM_CHANCE = 0.15; // plus random chance on any normal food
+
+  let cell = 20; // computed in resize()
+  let dpr = 1;
+
+  // State
+  /** @type {{x:number,y:number}[]} */
+  let snake = [];
+  let dir = { x: 1, y: 0 };
+  /** @type {{x:number,y:number}[]} */
+  let dirQueue = [];
+  let food = { x: 0, y: 0 };
+
+  let bonus = /** @type {{active:boolean,x:number,y:number,ttl:number}} */ ({ active:false, x:0, y:0, ttl:0 });
+
+  let score = 0;
+  let pendingGrow = 0;
+  let running = false;
+  let paused = false;
+  let started = false;
+  let raf = 0;
   let last = 0;
-  const STEP_MS = 85;
+  let acc = 0;
 
-  function randCell() {
+  let normalEaten = 0;
+
+  function t(key){
+    return (typeof window.__t === "function") ? window.__t(key) : key;
+  }
+
+  function clampWrap(n){
+    // wrap 0..GRID-1
+    n %= GRID;
+    return n < 0 ? n + GRID : n;
+  }
+
+  function randCell(){
     return {
       x: Math.floor(Math.random() * GRID),
       y: Math.floor(Math.random() * GRID),
     };
   }
 
-  function resetGame() {
-    snake = [{ x: 8, y: 14 }, { x: 7, y: 14 }, { x: 6, y: 14 }];
-    dir = { x: 1, y: 0 };
-    nextDir = { x: 1, y: 0 };
-    food = spawnFood();
-    score = 0;
-    running = false;
-    paused = false;
-    updateScore();
-    showStart();
-    draw();
+  function isOnSnake(p){
+    return snake.some(s => s.x === p.x && s.y === p.y);
   }
 
-  function spawnFood() {
+  function spawnFood(){
     let p = randCell();
-    while (snake?.some(s => s.x === p.x && s.y === p.y)) p = randCell();
-    return p;
+    while (isOnSnake(p) || (bonus.active && p.x === bonus.x && p.y === bonus.y)) p = randCell();
+    food = p;
   }
 
-  function updateScore() {
+  function spawnBonus(){
+    if (bonus.active) return;
+    let p = randCell();
+    while (isOnSnake(p) || (p.x === food.x && p.y === food.y)) p = randCell();
+    bonus = { active:true, x:p.x, y:p.y, ttl: BONUS_TTL_STEPS };
+  }
+
+  function setBestIfNeeded(){
+    const best = Number(localStorage.getItem(BEST_KEY) || "0");
+    if (score > best) localStorage.setItem(BEST_KEY, String(score));
+  }
+
+  function updateHud(){
     scoreEl.textContent = String(score);
-    const best = Number(localStorage.getItem(BEST_KEY) || "0");
-    bestEl.textContent = String(best);
+    bestEl.textContent = String(Number(localStorage.getItem(BEST_KEY) || "0"));
   }
 
-  function setBestIfNeeded() {
-    const best = Number(localStorage.getItem(BEST_KEY) || "0");
-    if (score > best) {
-      localStorage.setItem(BEST_KEY, String(score));
-    }
-  }
-
-  function t(key) {
-    if (typeof window.__t === "function") return window.__t(key);
-    return key;
-  }
-
-  function showOverlay(titleKey, subKey) {
+  function showOverlay(titleKey, subKey){
     ovTitle.textContent = t(titleKey);
     ovSub.textContent = t(subKey);
     overlay.classList.add("on");
   }
-  function hideOverlay() {
+  function hideOverlay(){
     overlay.classList.remove("on");
   }
 
-  function showStart() {
+  function resetGame(){
+    // Center-ish start
+    snake = [{ x: 8, y: 14 }, { x: 7, y: 14 }, { x: 6, y: 14 }];
+    dir = { x: 1, y: 0 };
+    dirQueue = [];
+    pendingGrow = 0;
+    score = 0;
+    paused = false;
+    running = false;
+    started = false;
+    normalEaten = 0;
+    bonus = { active:false, x:0, y:0, ttl:0 };
+    spawnFood();
+    updateHud();
     showOverlay("snake.title", "snake.hint");
-  }
-  function showPause() {
-    showOverlay("snake.pause", "snake.resume");
-  }
-  function showGameOver() {
-    showOverlay("snake.gameover", "snake.restart");
+    draw();
   }
 
-  function startIfNeeded() {
-    if (!running) {
-      running = true;
+  function startIfNeeded(){
+    if (!started){
+      started = true;
       hideOverlay();
+      running = true;
       last = performance.now();
+      acc = 0;
       raf = requestAnimationFrame(loop);
     }
   }
 
-  function togglePause() {
-    if (!running) return;
+  function togglePause(){
+    if (!started) return;
     paused = !paused;
-    if (paused) {
-      showPause();
+    if (paused){
+      showOverlay("snake.pause", "snake.resume");
     } else {
       hideOverlay();
-      last = performance.now();
     }
   }
 
-  function setDir(dx, dy) {
-    // Prevent reversing into itself
-    if (dx === -dir.x && dy === -dir.y) return;
-    nextDir = { x: dx, y: dy };
-    startIfNeeded();
+  function restart(){
+    cancelAnimationFrame(raf);
+    resetGame();
   }
 
-  function step() {
-    dir = nextDir;
-
-    const head = snake[0];
-    const nh = { x: head.x + dir.x, y: head.y + dir.y };
-
-    // wall collision
-    if (nh.x < 0 || nh.x >= GRID || nh.y < 0 || nh.y >= GRID) {
-      gameOver();
-      return;
-    }
-    // self collision
-    if (snake.some(s => s.x === nh.x && s.y === nh.y)) {
-      gameOver();
-      return;
-    }
-
-    snake.unshift(nh);
-
-    // eat
-    if (nh.x === food.x && nh.y === food.y) {
-      score += 10;
-      food = spawnFood();
-      updateScore();
-    } else {
-      snake.pop();
-    }
-  }
-
-  function gameOver() {
+  function gameOver(){
     setBestIfNeeded();
-    updateScore();
+    updateHud();
     running = false;
     paused = false;
     cancelAnimationFrame(raf);
-    showGameOver();
+    showOverlay("snake.gameover", "snake.restart");
     draw();
   }
 
-  function drawGrid() {
+  function enqueueDir(nx, ny){
+    // Ignore zero vectors
+    if (nx === 0 && ny === 0) return;
+
+    // Determine last intended direction (queue tail or current dir)
+    const lastIntended = dirQueue.length ? dirQueue[dirQueue.length - 1] : dir;
+
+    // No same direction
+    if (lastIntended.x === nx && lastIntended.y === ny) return;
+
+    // No reverse (prevents instant 180 turn)
+    if (lastIntended.x === -nx && lastIntended.y === -ny) return;
+
+    // Keep queue short for responsiveness but allow quick double-turn
+    if (dirQueue.length >= 2) dirQueue.shift();
+    dirQueue.push({ x:nx, y:ny });
+
+    startIfNeeded();
+  }
+
+  function step(){
+    if (!running || paused) return;
+
+    // Apply queued direction first
+    if (dirQueue.length) dir = dirQueue.shift();
+
+    const head = snake[0];
+    const nh = {
+      x: clampWrap(head.x + dir.x),
+      y: clampWrap(head.y + dir.y),
+    };
+
+    const ateNormal = (nh.x === food.x && nh.y === food.y);
+    const ateBonus  = (bonus.active && nh.x === bonus.x && nh.y === bonus.y);
+
+    // Determine if tail will move away this step (important for correct self-collision)
+    const tailWillMove = (pendingGrow === 0 && !ateNormal && !ateBonus);
+
+    // Self collision check:
+    // - If tail will move, ignore the last segment because it is vacated this step
+    const len = snake.length;
+    const checkUntil = tailWillMove ? len - 1 : len;
+    for (let i = 0; i < checkUntil; i++){
+      const s = snake[i];
+      if (s.x === nh.x && s.y === nh.y){
+        gameOver();
+        return;
+      }
+    }
+
+    // Move
+    snake.unshift(nh);
+
+    if (ateBonus){
+      score += BONUS_SCORE;
+      pendingGrow += 2; // bonus grows a bit more
+      bonus.active = false;
+      bonus.ttl = 0;
+    }
+
+    if (ateNormal){
+      score += 10;
+      pendingGrow += 1;
+      normalEaten++;
+
+      // Always respawn normal food first
+      spawnFood();
+
+      // Bonus rule: (C) guaranteed every N foods + also random chance
+      if (!bonus.active && (normalEaten % BONUS_EVERY === 0 || Math.random() < BONUS_RANDOM_CHANCE)){
+        spawnBonus();
+      }
+    }
+
+    // Pop tail unless growing
+    if (pendingGrow > 0){
+      pendingGrow--;
+    } else {
+      snake.pop();
+    }
+
+    // Bonus TTL
+    if (bonus.active){
+      bonus.ttl--;
+      if (bonus.ttl <= 0){
+        bonus.active = false;
+      }
+    }
+
+    updateHud();
+  }
+
+  function loop(now){
+    if (!running) return;
+
+    const dt = now - last;
+    last = now;
+
+    // Cap huge jumps (tab switch)
+    acc += Math.min(200, dt);
+
+    while (acc >= STEP_MS){
+      step();
+      acc -= STEP_MS;
+    }
+
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  function resize(){
+    // Fit canvas to its parent width, keep square
+    const parent = canvas.parentElement;
+    const w = Math.min(560, parent ? parent.clientWidth : 560);
+    const h = w;
+
+    dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(dpr, dpr);
+
+    cell = w / GRID;
+    draw();
+  }
+
+  function drawGrid(){
     ctx.save();
-    ctx.globalAlpha = 0.12;
+    ctx.globalAlpha = 0.10;
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 1;
-    for (let i = 1; i < GRID; i++) {
-      ctx.beginPath();
-      ctx.moveTo(i * CELL, 0);
-      ctx.lineTo(i * CELL, canvas.height);
-      ctx.stroke();
+    const w = canvas.clientWidth || 560;
 
+    for (let i = 0; i <= GRID; i++){
+      const p = i * cell;
       ctx.beginPath();
-      ctx.moveTo(0, i * CELL);
-      ctx.lineTo(canvas.width, i * CELL);
+      ctx.moveTo(p, 0);
+      ctx.lineTo(p, w);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, p);
+      ctx.lineTo(w, p);
       ctx.stroke();
     }
     ctx.restore();
   }
 
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  function drawRectCell(x,y, inset, radius){
+    const px = x * cell + inset;
+    const py = y * cell + inset;
+    const size = cell - inset*2;
+    roundRect(px, py, size, size, radius);
+  }
 
-    // subtle vignette
-    ctx.save();
-    const g = ctx.createRadialGradient(
-      canvas.width / 2, canvas.height / 2, 40,
-      canvas.width / 2, canvas.height / 2, canvas.width / 1.1
-    );
-    g.addColorStop(0, "rgba(0,0,0,0)");
-    g.addColorStop(1, "rgba(0,0,0,0.35)");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.restore();
+  function roundRect(x,y,w,h,r){
+    const rr = Math.max(0, Math.min(r, Math.min(w,h)/2));
+    ctx.beginPath();
+    ctx.moveTo(x+rr, y);
+    ctx.arcTo(x+w, y, x+w, y+h, rr);
+    ctx.arcTo(x+w, y+h, x, y+h, rr);
+    ctx.arcTo(x, y+h, x, y, rr);
+    ctx.arcTo(x, y, x+w, y, rr);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function draw(){
+    const w = canvas.clientWidth || 560;
+
+    // Background
+    ctx.clearRect(0,0,w,w);
+    ctx.fillStyle = "rgba(9,12,18,.65)";
+    ctx.fillRect(0,0,w,w);
 
     drawGrid();
 
-    // food
+    // Food (square, Nokia vibe)
     ctx.save();
-    ctx.fillStyle = "rgba(94,234,212,.95)";
-    ctx.shadowColor = "rgba(94,234,212,.55)";
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    ctx.arc((food.x + 0.5) * CELL, (food.y + 0.5) * CELL, CELL * 0.28, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fillStyle = "#5eead4";
+    drawRectCell(food.x, food.y, cell*0.24, 6);
     ctx.restore();
 
-    // snake
-    for (let i = 0; i < snake.length; i++) {
-      const s = snake[i];
-      const x = s.x * CELL;
-      const y = s.y * CELL;
-
+    // Bonus (bigger square)
+    if (bonus.active){
       ctx.save();
-      ctx.fillStyle = i === 0 ? "rgba(232,238,247,.96)" : "rgba(232,238,247,.75)";
-      ctx.fillRect(x + 2, y + 2, CELL - 4, CELL - 4);
+      ctx.fillStyle = "#a78bfa";
+      const inset = cell*0.10; // bigger
+      drawRectCell(bonus.x, bonus.y, inset, 8);
+      ctx.restore();
+    }
+
+    // Snake
+    for (let i = 0; i < snake.length; i++){
+      const s = snake[i];
+      const isHead = i === 0;
+      ctx.save();
+      ctx.fillStyle = isHead ? "#e8eef7" : "rgba(232,238,247,.70)";
+      const inset = isHead ? cell*0.14 : cell*0.18;
+      drawRectCell(s.x, s.y, inset, isHead ? 8 : 7);
       ctx.restore();
     }
   }
 
-  function loop(ts) {
-    raf = requestAnimationFrame(loop);
-    if (!running || paused) return;
+  // ---------- Inputs ----------
+  function onKeyDown(e){
+    const k = (e.key || "").toLowerCase();
+    const arrow = ["arrowup","arrowdown","arrowleft","arrowright"];
+    const wasd  = ["w","a","s","d"];
+    const control = arrow.includes(k) || wasd.includes(k) || k === " " || k === "enter" || k === "p" || k === "r";
 
-    const dt = ts - last;
-    if (dt >= STEP_MS) {
-      last = ts;
-      step();
-      draw();
-    }
+    if (control) e.preventDefault();
+
+    if (k === "arrowup" || k === "w") enqueueDir(0, -1);
+    else if (k === "arrowdown" || k === "s") enqueueDir(0, 1);
+    else if (k === "arrowleft" || k === "a") enqueueDir(-1, 0);
+    else if (k === "arrowright" || k === "d") enqueueDir(1, 0);
+    else if (k === " " || k === "p") togglePause();
+    else if (k === "enter" || k === "r") restart();
   }
 
-  function onKey(e) {
-    const k = e.key;
-    if (k === "ArrowUp") return setDir(0, -1);
-    if (k === "ArrowDown") return setDir(0, 1);
-    if (k === "ArrowLeft") return setDir(-1, 0);
-    if (k === "ArrowRight") return setDir(1, 0);
+  // Touch/Pointer controls on board
+  let pDown = false;
+  let pStartX = 0;
+  let pStartY = 0;
 
-    if (k === " " || k === "Spacebar") {
-      e.preventDefault();
-      togglePause();
-      return;
-    }
-    if (k === "Enter") {
-      // restart from gameover/anytime
-      cancelAnimationFrame(raf);
-      resetGame();
-      return;
-    }
+  function pointerPos(ev){
+    const rect = canvas.getBoundingClientRect();
+    return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
   }
 
-  // Update overlay when language changes
-  window.addEventListener("langchange", () => {
-    // if overlay visible, re-render its text based on current state
-    if (!overlay.classList.contains("on")) return;
-    if (!running) {
-      // either start screen or game over
-      // Heuristic: if score>0 and not running, it's probably gameover
-      if (score > 0) showGameOver(); else showStart();
-    } else if (paused) {
-      showPause();
+  function onPointerDown(ev){
+    // left mouse / touch
+    pDown = true;
+    const p = pointerPos(ev);
+    pStartX = p.x; pStartY = p.y;
+    startIfNeeded();
+  }
+  function onPointerMove(ev){
+    if (!pDown) return;
+    const p = pointerPos(ev);
+    const dx = p.x - pStartX;
+    const dy = p.y - pStartY;
+
+    if (Math.abs(dx) < MIN_SWIPE && Math.abs(dy) < MIN_SWIPE) return;
+
+    if (Math.abs(dx) > Math.abs(dy)){
+      enqueueDir(dx > 0 ? 1 : -1, 0);
+    } else {
+      enqueueDir(0, dy > 0 ? 1 : -1);
     }
-  });
+    // Reset start to allow continuous control by dragging finger
+    pStartX = p.x; pStartY = p.y;
+  }
+  function onPointerUp(){
+    pDown = false;
+  }
 
-  document.addEventListener("keydown", onKey, { passive: false });
+  function wireTouchButtons(){
+    // D-pad buttons
+    document.querySelectorAll("[data-dir]").forEach(btn => {
+      const dirName = btn.getAttribute("data-dir");
+      btn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        if (dirName === "up") enqueueDir(0,-1);
+        if (dirName === "down") enqueueDir(0,1);
+        if (dirName === "left") enqueueDir(-1,0);
+        if (dirName === "right") enqueueDir(1,0);
+      }, { passive:false });
+    });
 
-  // init
-  bestEl.textContent = String(Number(localStorage.getItem(BEST_KEY) || "0"));
+    document.querySelectorAll("[data-action]").forEach(btn => {
+      const a = btn.getAttribute("data-action");
+      btn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        if (a === "pause") togglePause();
+        if (a === "restart") restart();
+      }, { passive:false });
+    });
+  }
+
+  // Overlay click/tap behavior:
+  overlay?.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    if (!started) startIfNeeded();
+    else if (!running) restart();
+    else if (paused) togglePause();
+  }, { passive:false });
+
+  // Boot
+  window.addEventListener("keydown", onKeyDown, { passive:false });
+
+  canvas.addEventListener("pointerdown", onPointerDown, { passive:true });
+  canvas.addEventListener("pointermove", onPointerMove, { passive:true });
+  window.addEventListener("pointerup", onPointerUp, { passive:true });
+  window.addEventListener("pointercancel", onPointerUp, { passive:true });
+
+  wireTouchButtons();
+
+  window.addEventListener("resize", resize);
+
+  resize();
   resetGame();
 })();
