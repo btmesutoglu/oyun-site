@@ -1,2 +1,2 @@
-# oyun-site
+oyun-site
 Mini Oyun Sitesi
