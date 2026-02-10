@@ -185,3 +185,22 @@ a{ color:inherit; text-decoration:none; }
   border-radius: 8px;
   color: var(--text);
 }
+
+/* Responsive */
+@media (max-width: 720px){
+  .topbar-inner{ padding: 12px 14px; }
+  .nav{ gap: 10px; }
+  .cards{ grid-template-columns: 1fr; }
+  .hero{ padding-top: 18px; }
+}
+@media (max-width: 520px){
+  .topbar-inner{ flex-wrap: wrap; gap: 10px; }
+  .nav{ order: 3; width: 100%; justify-content: center; flex-wrap: wrap; }
+  .lang{ margin-left: auto; }
+  .lang button{ padding: 7px 9px; }
+  .lang button .label{ display:none; }
+  .container{ padding: 0 14px; }
+}
+@media (prefers-reduced-motion: reduce){
+  *{ scroll-behavior:auto !important; transition:none !important; animation:none !important; }
+}
