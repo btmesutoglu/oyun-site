@@ -12,7 +12,7 @@
   "game.basketball.desc": "Coming soon — a mini game with a different concept.",
   "badge.coming": "Coming soon",
   "snake.title": "Snake",
-  "snake.hint": "Press arrow keys to start",
+  "snake.hint": "Use Arrow keys / WASD / swipe to start",
   "snake.pause": "Paused",
   "snake.resume": "Press Space to resume",
   "snake.gameover": "Game over",
@@ -21,5 +21,10 @@
   "snake.best": "Best",
   "basket.title": "Basketball",
   "basket.subtitle": "Coming soon",
-  "basket.body": "This game will have a different UI and ruleset. The foundation is ready — content will follow."
+  "basket.body": "This game will have a different UI and ruleset. The foundation is ready — content will follow.",
+  "snake.pauseLabel": "Pause",
+  "snake.restartLabel": "Restart",
+  "snake.touchhint": "Mobile: swipe on the board or tap the D‑pad.",
+  "snake.pauseBtn": "Pause",
+  "snake.restartBtn": "Restart"
 }
