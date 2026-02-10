@@ -26,5 +26,7 @@
   "snake.restartLabel": "Restart",
   "snake.touchhint": "Mobile: swipe on the board or tap the D‑pad.",
   "snake.pauseBtn": "Pause",
-  "snake.restartBtn": "Restart"
+  "snake.restartBtn": "Restart",
+  "btn.play": "Play",
+  "btn.open": "Open"
 }

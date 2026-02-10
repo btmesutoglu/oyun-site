@@ -26,5 +26,7 @@
   "snake.restartLabel": "Yeniden",
   "snake.touchhint": "Telefon: sahada kaydır veya yön tuşlarına dokun.",
   "snake.pauseBtn": "Duraklat",
-  "snake.restartBtn": "Yeniden başlat"
+  "snake.restartBtn": "Yeniden başlat",
+  "btn.play": "Oyna",
+  "btn.open": "Aç"
 }

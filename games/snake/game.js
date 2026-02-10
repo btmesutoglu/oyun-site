@@ -1,505 +1,504 @@
-/**
- * Snake - game.js
- * Goals:
- * - Fast input (Arrow keys + WASD) + prevent scroll
- * - Mobile controls: swipe/drag on the board + on-screen D‑pad + buttons
+/*!
+ * Snake - game.js (ES5)
+ * - Arrow keys + WASD
+ * - Touch swipe/drag on canvas + on-screen D-pad
  * - Wrap-around world (no wall death)
- * - Correct self-collision (tail edge-case handled)
- * - Bonus food (bigger square, timed) in a Nokia 3310-ish spirit
- *
- * i18n: uses window.__t(key) from /assets/site.js when available
+ * - Self-collision ends game
+ * - Bonus food (rarer), blinking + score celebration
+ * - Starts slow, speeds up as you eat (Nokia-like)
  */
-(function(){
-  const canvas = document.getElementById("c");
-  const ctx = canvas.getContext("2d");
+(function () {
+  'use strict';
 
-  const scoreEl = document.getElementById("score");
-  const bestEl  = document.getElementById("best");
-  const overlay = document.getElementById("overlay");
-  const ovTitle = document.getElementById("ov-title");
-  const ovSub   = document.getElementById("ov-sub");
+  var canvas = document.getElementById('c');
+  var ctx = canvas.getContext('2d');
+  var scoreEl = document.getElementById('score');
+  var bestEl = document.getElementById('best');
+  var overlay = document.getElementById('overlay');
+  var ovTitle = document.getElementById('ov-title');
+  var ovSub = document.getElementById('ov-sub');
 
-  const BEST_KEY = "snake_best_v2";
+  var BEST_KEY = 'snake_best_v3';
 
-  function flashBonus(isBonus){
-    if (!scoreEl) return;
-    scoreEl.classList.add("flash-bonus");
-    window.setTimeout(function(){ scoreEl.classList.remove("flash-bonus"); }, 650);
+  // Grid
+  var GRID = 28; // 28x28
+  var CELL = Math.floor(canvas.width / GRID);
+
+  // Visual gap between squares (to avoid "merged" look)
+  var GAP = 2; // px
+  var INSET = Math.max(1, Math.floor(GAP / 2));
+
+  // Colors
+  var BG = '#0b1116';
+  var GRIDLINE = 'rgba(255,255,255,0.06)';
+  var SNAKE = '#d9dde3';     // same for head/body
+  var FOOD = '#00ffd1';      // normal food
+  var BONUS = '#f5c842';     // bonus gold
+
+  // Game state
+  var snake = [];
+  var dir = { x: 1, y: 0 };        // current direction
+  var dirQueue = [];              // queued directions
+  var maxQueue = 2;
+
+  var food = null;
+  var bonus = null;               // {x,y,expiresAt}
+  var bonusArmed = false;
+  var bonusCooldown = 0;
+  var foodsEaten = 0;
+
+  var score = 0;
+  var best = 0;
+
+  var running = false;
+  var paused = false;
+  var tickMs = 180;               // start slow
+  var tickMin = 75;               // speed cap
+  var tickStep = 6;               // speed-up step per food
+
+  var rafId = null;
+  var lastTick = 0;
+
+  // --- Helpers ---
+  function loadBest() {
+    try {
+      var v = window.localStorage.getItem(BEST_KEY);
+      best = v ? parseInt(v, 10) || 0 : 0;
+    } catch (e) { best = 0; }
+    bestEl.textContent = String(best);
   }
 
-
-  // Game tuning
-  const GRID = 28;              // 28x28 cells
-  const STEP_MS_START = 170;   // start slow (Nokia-ish)
-const STEP_MS_MIN   = 70;    // max speed cap
-const STEP_MS_DECAY = 4;     // speed up per normal food
-const STEP_MS_BONUS_DECAY = 8; // extra speed up on bonus
-let stepMs = STEP_MS_START;
-  const MIN_SWIPE = 12;         // px threshold for direction change
-
-  // Bonus tuning
-  const BONUS_SCORE = 50;
-  const BONUS_TTL_STEPS = 110;  // ~ 8-9 seconds depending on speed
-  const BONUS_EVERY = 10;        // guaranteed bonus every 10 normal foods
-  const BONUS_RANDOM_CHANCE = 0.05; // low random chance
-const BONUS_MIN_FOODS_GAP = 8; // min foods between bonuses
-
-  let cell = 20; // computed in resize()
-  let dpr = 1;
-
-  // State
-  /** @type {{x:number,y:number}[]} */
-  let snake = [];
-  let dir = { x: 1, y: 0 };
-  /** @type {{x:number,y:number}[]} */
-  let dirQueue = [];
-  let food = { x: 0, y: 0 };
-
-  let bonus = /** @type {{active:boolean,x:number,y:number,ttl:number}} */ ({ active:false, x:0, y:0, ttl:0 });
-
-  let score = 0;
-  let pendingGrow = 0;
-  let running = false;
-  let paused = false;
-  let started = false;
-  let raf = 0;
-  let last = 0;
-  let acc = 0;
-
-  let normalEaten = 0;
-  let foodsSinceBonus = 999;
-
-  function t(key, fallback){
-    if (typeof window.__t === "function") return window.__t(key, fallback);
-    return (fallback != null) ? String(fallback) : String(key);
+  function saveBest() {
+    try { window.localStorage.setItem(BEST_KEY, String(best)); } catch (e) {}
   }
 
-  function clampWrap(n){
-    // wrap 0..GRID-1
-    n %= GRID;
-    return n < 0 ? n + GRID : n;
+  function setScore(v) {
+    score = v;
+    scoreEl.textContent = String(score);
+    if (score > best) {
+      best = score;
+      bestEl.textContent = String(best);
+      saveBest();
+    }
   }
 
-  function randCell(){
-    return {
-      x: Math.floor(Math.random() * GRID),
-      y: Math.floor(Math.random() * GRID),
-    };
+  function clampWrap(x) {
+    // x in [0, GRID-1] using wrap
+    if (x < 0) return GRID - 1;
+    if (x >= GRID) return 0;
+    return x;
   }
 
-  function isOnSnake(p){
-    for (var i = 0; i < snake.length; i++){ var s = snake[i]; if (s.x === p.x && s.y === p.y) return true; }
+  function sameCell(a, b) {
+    return a && b && a.x === b.x && a.y === b.y;
+  }
+
+  function occupied(x, y) {
+    for (var i = 0; i < snake.length; i++) {
+      if (snake[i].x === x && snake[i].y === y) return true;
+    }
     return false;
   }
 
-  function spawnFood(){
-    let p = randCell();
-    while (isOnSnake(p) || (bonus.active && p.x === bonus.x && p.y === bonus.y)) p = randCell();
-    food = p;
+  function randInt(n) { return Math.floor(Math.random() * n); }
+
+  function spawnFood() {
+    var x, y;
+    do {
+      x = randInt(GRID);
+      y = randInt(GRID);
+    } while (occupied(x, y) || (bonus && bonus.x === x && bonus.y === y));
+    food = { x: x, y: y };
   }
 
-  function spawnBonus(){
-    if (bonus.active) return;
-    let p = randCell();
-    while (isOnSnake(p) || (p.x === food.x && p.y === food.y)) p = randCell();
-    bonus = { active:true, x:p.x, y:p.y, ttl: BONUS_TTL_STEPS };
+  function spawnBonus() {
+    var x, y, tries = 0;
+    do {
+      x = randInt(GRID);
+      y = randInt(GRID);
+      tries++;
+      if (tries > 200) return; // fail safe
+    } while (occupied(x, y) || (food && food.x === x && food.y === y));
+    bonus = { x: x, y: y, expiresAt: Date.now() + 6500 };
+    bonusCooldown = 14; // min normal-food count before another bonus
   }
 
-  function setBestIfNeeded(){
-    const best = Number(localStorage.getItem(BEST_KEY) || "0");
-    if (score > best) localStorage.setItem(BEST_KEY, String(score));
-  }
+  function maybeSpawnBonus() {
+    if (bonus) return;
+    if (bonusCooldown > 0) return;
 
-  function updateHud(){
-    scoreEl.textContent = String(score);
-    bestEl.textContent = String(Number(localStorage.getItem(BEST_KEY) || "0"));
-  }
-
-  function showOverlay(titleKey, subKey){
-    ovTitle.textContent = t(titleKey, ovTitle.textContent);
-    ovSub.textContent = t(subKey, ovSub.textContent);
-    overlay.classList.add("on");
-  }
-  function hideOverlay(){
-    overlay.classList.remove("on");
-  }
-
-  function resetGame(){
-    // Center-ish start
-    snake = [{ x: 8, y: 14 }, { x: 7, y: 14 }, { x: 6, y: 14 }];
-    dir = { x: 1, y: 0 };
-    dirQueue = [];
-    pendingGrow = 0;
-    score = 0;
-    paused = false;
-    running = false;
-    started = false;
-    normalEaten = 0;
-    foodsSinceBonus = 999;
-    stepMs = STEP_MS_START;
-    bonus = { active:false, x:0, y:0, ttl:0 };
-    spawnFood();
-    updateHud();
-    showOverlay("snake.title", "snake.hint");
-    draw();
-  }
-
-  function startIfNeeded(){
-    if (!started){
-      started = true;
-      hideOverlay();
-      running = true;
-      last = performance.now();
-      acc = 0;
-      raf = requestAnimationFrame(loop);
+    // Nokia-like: guaranteed every 12 foods + rare random
+    if (foodsEaten > 0 && (foodsEaten % 12 === 0)) {
+      spawnBonus();
+      return;
+    }
+    // small random chance
+    if (Math.random() < 0.03) {
+      spawnBonus();
     }
   }
 
-  function togglePause(){
-    if (!started) return;
+  function pushDir(nx, ny) {
+    // prevent 180° reverse
+    if (snake.length > 1) {
+      var last = (dirQueue.length ? dirQueue[dirQueue.length - 1] : dir);
+      if (last.x === -nx && last.y === -ny) return;
+    }
+    // no duplicates
+    var last2 = dirQueue.length ? dirQueue[dirQueue.length - 1] : dir;
+    if (last2.x === nx && last2.y === ny) return;
+
+    if (dirQueue.length < maxQueue) dirQueue.push({ x: nx, y: ny });
+  }
+
+  function popDir() {
+    if (dirQueue.length) {
+      dir = dirQueue.shift();
+    }
+  }
+
+  function showOverlay(titleKey, subKey) {
+    // use already-translated text in DOM (site.js set them)
+    // titleKey/subKey are literal strings (already translated text passed in)
+    ovTitle.textContent = titleKey || '';
+    ovSub.textContent = subKey || '';
+    overlay.classList.add('is-visible');
+  }
+
+  function hideOverlay() {
+    overlay.classList.remove('is-visible');
+  }
+
+  function getTextFromKey(key, fallback) {
+    // Elements with data-i18n already translated, but we keep a fallback.
+    // We'll use fallback strings supplied by HTML if needed.
+    return fallback || key || '';
+  }
+
+  function celebrateBonus() {
+    scoreEl.classList.remove('score-bonus');
+    // force reflow
+    scoreEl.offsetWidth;
+    scoreEl.classList.add('score-bonus');
+    try { if (navigator.vibrate) navigator.vibrate(30); } catch (e) {}
+    setTimeout(function () { scoreEl.classList.remove('score-bonus'); }, 650);
+  }
+
+  function resetGame() {
+    foodsEaten = 0;
+    bonus = null;
+    bonusCooldown = 0;
+    dirQueue = [];
+    dir = { x: 1, y: 0 };
+    tickMs = 180;
+
+    snake = [
+      { x: 8, y: 12 },
+      { x: 7, y: 12 },
+      { x: 6, y: 12 }
+    ];
+
+    setScore(0);
+    spawnFood();
+    maybeSpawnBonus();
+
+    running = false;
+    paused = false;
+
+    // Overlay text: use DOM texts (already localized)
+    var title = document.querySelector('[data-i18n="snake.title"]');
+    var hint = document.querySelector('[data-i18n="snake.hint"]');
+    showOverlay(title ? title.textContent : 'Snake', hint ? hint.textContent : '');
+  }
+
+  function gameOver() {
+    running = false;
+    paused = false;
+    var over = (document.querySelector('[data-i18n="snake.gameover"]') || {}).textContent || 'Oyun bitti';
+    var restart = (document.querySelector('[data-i18n="snake.restart"]') || {}).textContent || 'Tekrar: Enter';
+    showOverlay(over, restart);
+  }
+
+  function togglePause() {
+    if (!running) return;
     paused = !paused;
-    if (paused){
-      showOverlay("snake.pause", "snake.resume");
+    if (paused) {
+      var p = (document.querySelector('[data-i18n="snake.pause"]') || {}).textContent || 'Duraklatıldı';
+      var r = (document.querySelector('[data-i18n="snake.resume"]') || {}).textContent || 'Devam';
+      showOverlay(p, r);
     } else {
       hideOverlay();
     }
   }
 
-  function restart(){
-    cancelAnimationFrame(raf);
-    resetGame();
+  function startIfNeeded() {
+    if (!running) {
+      running = true;
+      paused = false;
+      hideOverlay();
+      lastTick = 0;
+    }
   }
 
-  function gameOver(){
-    setBestIfNeeded();
-    updateHud();
-    running = false;
-    paused = false;
-    cancelAnimationFrame(raf);
-    showOverlay("snake.gameover", "snake.restart");
-    draw();
-  }
+  function step() {
+    popDir();
 
-  function enqueueDir(nx, ny){
-    // Ignore zero vectors
-    if (nx === 0 && ny === 0) return;
+    var head = snake[0];
+    var nx = clampWrap(head.x + dir.x);
+    var ny = clampWrap(head.y + dir.y);
 
-    // Determine last intended direction (queue tail or current dir)
-    const lastIntended = dirQueue.length ? dirQueue[dirQueue.length - 1] : dir;
+    // Determine if we will grow this move
+    var willEatFood = (food && food.x === nx && food.y === ny);
+    var willEatBonus = (bonus && bonus.x === nx && bonus.y === ny);
+    var willGrow = willEatFood || willEatBonus;
 
-    // No same direction
-    if (lastIntended.x === nx && lastIntended.y === ny) return;
-
-    // No reverse (prevents instant 180 turn)
-    if (lastIntended.x === -nx && lastIntended.y === -ny) return;
-
-    // Keep queue short for responsiveness but allow quick double-turn
-    if (dirQueue.length >= 2) dirQueue.shift();
-    dirQueue.push({ x:nx, y:ny });
-
-    startIfNeeded();
-  }
-
-  function step(){
-    if (!running || paused) return;
-
-    // Apply queued direction first
-    if (dirQueue.length) dir = dirQueue.shift();
-
-    const head = snake[0];
-    const nh = {
-      x: clampWrap(head.x + dir.x),
-      y: clampWrap(head.y + dir.y),
-    };
-
-    const ateNormal = (nh.x === food.x && nh.y === food.y);
-    const ateBonus  = (bonus.active && nh.x === bonus.x && nh.y === bonus.y);
-
-    // Determine if tail will move away this step (important for correct self-collision)
-    const tailWillMove = (pendingGrow === 0 && !ateNormal && !ateBonus);
-
-    // Self collision check:
-    // - If tail will move, ignore the last segment because it is vacated this step
-    const len = snake.length;
-    const checkUntil = tailWillMove ? len - 1 : len;
-    for (let i = 0; i < checkUntil; i++){
-      const s = snake[i];
-      if (s.x === nh.x && s.y === nh.y){
-        gameOver();
-        return;
+    // Self-collision check.
+    // If not growing, tail will move away; allow moving into the current tail cell.
+    var tail = snake[snake.length - 1];
+    for (var i = 0; i < snake.length; i++) {
+      var s = snake[i];
+      if (s.x === nx && s.y === ny) {
+        var isTail = (s.x === tail.x && s.y === tail.y);
+        if (!(isTail && !willGrow)) {
+          gameOver();
+          return;
+        }
       }
     }
 
-    // Move
-    snake.unshift(nh);
+    // Move: add new head
+    snake.unshift({ x: nx, y: ny });
 
-    if (ateBonus){
-      score += BONUS_SCORE;
-      pendingGrow += 2; // bonus grows a bit more
-      bonus.active = false;
-      bonus.ttl = 0;
-      flashBonus(true);
-      foodsSinceBonus = 0;
-      stepMs = Math.max(STEP_MS_MIN, stepMs - STEP_MS_BONUS_DECAY);
-    }
-
-    if (ateNormal){
-      score += 10;
-      pendingGrow += 1;
-      normalEaten++;
-      foodsSinceBonus++;
-
-      // Speed up gradually
-      stepMs = Math.max(STEP_MS_MIN, stepMs - STEP_MS_DECAY);
-
-      // Always respawn normal food first
+    // Handle eats
+    if (willEatFood) {
+      foodsEaten++;
+      setScore(score + 10);
       spawnFood();
 
-      // Bonus rule: guaranteed every N foods + small random chance, but not too frequent
-      const wantBonus = (normalEaten % BONUS_EVERY === 0) || (Math.random() < BONUS_RANDOM_CHANCE);
-      if (!bonus.active && wantBonus && foodsSinceBonus >= BONUS_MIN_FOODS_GAP){
-        spawnBonus();
-        foodsSinceBonus = 0;
-      }
-    }
+      tickMs = Math.max(tickMin, tickMs - tickStep);
 
-    // Pop tail unless growing
-    if (pendingGrow > 0){
-      pendingGrow--;
+      if (bonusCooldown > 0) bonusCooldown--;
+      maybeSpawnBonus();
+    } else if (willEatBonus) {
+      foodsEaten++;
+      setScore(score + 50);
+      celebrateBonus();
+      bonus = null;
+
+      tickMs = Math.max(tickMin, tickMs - (tickStep + 2));
+
+      if (bonusCooldown > 0) bonusCooldown--;
+      spawnFood();
+      maybeSpawnBonus();
     } else {
+      // normal move: remove tail
       snake.pop();
+      if (bonusCooldown > 0) bonusCooldown--;
+      maybeSpawnBonus();
     }
 
-    // Bonus TTL
-    if (bonus.active){
-      bonus.ttl--;
-      if (bonus.ttl <= 0){
-        bonus.active = false;
-      }
+    // Expire bonus
+    if (bonus && Date.now() > bonus.expiresAt) {
+      bonus = null;
+    }
+  }
+
+  function drawCell(x, y, color, blink) {
+    var px = x * CELL;
+    var py = y * CELL;
+
+    var pad = INSET;
+    var w = CELL - (pad * 2);
+    var h = CELL - (pad * 2);
+
+    if (blink) {
+      // blink by toggling alpha
+      var on = (Math.floor(Date.now() / 180) % 2) === 0;
+      if (!on) return;
     }
 
-    updateHud();
+    ctx.fillStyle = color;
+    ctx.fillRect(px + pad, py + pad, w, h);
   }
 
-  function loop(now){
-    if (!running) return;
+  function drawGrid() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const dt = now - last;
-    last = now;
-
-    // Cap huge jumps (tab switch)
-    acc += Math.min(200, dt);
-
-    while (acc >= stepMs){
-      step();
-      acc -= stepMs;
-    }
-
-    draw();
-    raf = requestAnimationFrame(loop);
-  }
-
-  function resize(){
-    // Fit canvas to its parent width, keep square
-    const parent = canvas.parentElement;
-    const w = Math.min(560, parent ? parent.clientWidth : 560);
-    const h = w;
-
-    dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
-    canvas.style.width = String(w) + "px";
-    canvas.style.height = String(h) + "px";
-    canvas.width = Math.floor(w * dpr);
-    canvas.height = Math.floor(h * dpr);
-
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.scale(dpr, dpr);
-
-    cell = w / GRID;
-    draw();
-  }
-
-  function drawGrid(){
-    ctx.save();
-    ctx.globalAlpha = 0.10;
-    ctx.strokeStyle = "#ffffff";
+    ctx.strokeStyle = GRIDLINE;
     ctx.lineWidth = 1;
-    const w = canvas.clientWidth || 560;
 
-    for (let i = 0; i <= GRID; i++){
-      const p = i * cell;
+    for (var i = 0; i <= GRID; i++) {
+      var p = i * CELL + 0.5;
       ctx.beginPath();
       ctx.moveTo(p, 0);
-      ctx.lineTo(p, w);
+      ctx.lineTo(p, canvas.height);
       ctx.stroke();
+
       ctx.beginPath();
       ctx.moveTo(0, p);
-      ctx.lineTo(w, p);
+      ctx.lineTo(canvas.width, p);
       ctx.stroke();
     }
-    ctx.restore();
   }
 
-  function drawRectCell(x,y, inset, radius){
-    const px = x * cell + inset;
-    const py = y * cell + inset;
-    const size = cell - inset*2;
-    roundRect(px, py, size, size, radius);
-  }
-
-  function roundRect(x,y,w,h,r){
-    const rr = Math.max(0, Math.min(r, Math.min(w,h)/2));
-    ctx.beginPath();
-    ctx.moveTo(x+rr, y);
-    ctx.arcTo(x+w, y, x+w, y+h, rr);
-    ctx.arcTo(x+w, y+h, x, y+h, rr);
-    ctx.arcTo(x, y+h, x, y, rr);
-    ctx.arcTo(x, y, x+w, y, rr);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  function draw(){
-    const w = canvas.clientWidth || 560;
-
-    // Background
-    ctx.clearRect(0,0,w,w);
-    ctx.fillStyle = "rgba(9,12,18,.65)";
-    ctx.fillRect(0,0,w,w);
-
+  function draw() {
     drawGrid();
 
-    // Food (square, Nokia vibe)
-    ctx.save();
-    ctx.fillStyle = "#5eead4";
-    drawRectCell(food.x, food.y, 0, 0);
-    ctx.restore();
+    // food
+    if (food) drawCell(food.x, food.y, FOOD, false);
+    if (bonus) drawCell(bonus.x, bonus.y, BONUS, true);
 
-    // Bonus (bigger square, gold blink)
-    if (bonus.active){
-      const blinkOn = (Math.floor(performance.now() / 180) % 2) === 0;
-      ctx.save();
-      ctx.globalAlpha = blinkOn ? 1.0 : 0.35;
-      ctx.fillStyle = "#fbbf24";
-      drawRectCell(bonus.x, bonus.y, 0, 0);
-      ctx.restore();
-    }
-
-    // Snake
-    for (let i = 0; i < snake.length; i++){
-      const s = snake[i];
-      const isHead = i === 0;
-      ctx.save();
-      ctx.fillStyle = isHead ? "#e8eef7" : "rgba(232,238,247,.70)";
-      const inset = 0;
-      drawRectCell(s.x, s.y, inset, 0);
-      ctx.restore();
+    // snake (all same color)
+    for (var i = 0; i < snake.length; i++) {
+      drawCell(snake[i].x, snake[i].y, SNAKE, false);
     }
   }
 
-  // ---------- Inputs ----------
-  function onKeyDown(e){
-    const k = (e.key || "").toLowerCase();
-    const arrow = ["arrowup","arrowdown","arrowleft","arrowright"];
-    const wasd  = ["w","a","s","d"];
-    const control = arrow.includes(k) || wasd.includes(k) || k === " " || k === "enter" || k === "p" || k === "r";
+  function loop(ts) {
+    rafId = window.requestAnimationFrame(loop);
 
-    if (control) e.preventDefault();
+    if (!running || paused) {
+      draw();
+      return;
+    }
 
-    if (k === "arrowup" || k === "w") enqueueDir(0, -1);
-    else if (k === "arrowdown" || k === "s") enqueueDir(0, 1);
-    else if (k === "arrowleft" || k === "a") enqueueDir(-1, 0);
-    else if (k === "arrowright" || k === "d") enqueueDir(1, 0);
-    else if (k === " " || k === "p") togglePause();
-    else if (k === "enter" || k === "r") restart();
+    if (!lastTick) lastTick = ts;
+    var dt = ts - lastTick;
+
+    if (dt >= tickMs) {
+      lastTick = ts;
+      step();
+    }
+
+    draw();
   }
 
-  // Touch/Pointer controls on board
-  let pDown = false;
-  let pStartX = 0;
-  let pStartY = 0;
+  // --- Input wiring ---
+  function onKey(e) {
+    var key = e.key || e.code || '';
+    var k = String(key).toLowerCase();
 
-  function pointerPos(ev){
-    const rect = canvas.getBoundingClientRect();
-    return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+    if (k === 'arrowup' || k === 'w') { e.preventDefault(); pushDir(0, -1); startIfNeeded(); }
+    else if (k === 'arrowdown' || k === 's') { e.preventDefault(); pushDir(0, 1); startIfNeeded(); }
+    else if (k === 'arrowleft' || k === 'a') { e.preventDefault(); pushDir(-1, 0); startIfNeeded(); }
+    else if (k === 'arrowright' || k === 'd') { e.preventDefault(); pushDir(1, 0); startIfNeeded(); }
+    else if (k === ' ' || k === 'spacebar') { e.preventDefault(); togglePause(); }
+    else if (k === 'enter') { e.preventDefault(); resetGame(); }
   }
 
-  function onPointerDown(ev){
-    // left mouse / touch
-    pDown = true;
-    const p = pointerPos(ev);
-    pStartX = p.x; pStartY = p.y;
-    startIfNeeded();
-  }
-  function onPointerMove(ev){
-    if (!pDown) return;
-    const p = pointerPos(ev);
-    const dx = p.x - pStartX;
-    const dy = p.y - pStartY;
+  // Touch swipe/drag on canvas
+  var touchActive = false;
+  var startX = 0, startY = 0;
+  var lastDirAt = 0;
 
-    if (Math.abs(dx) < MIN_SWIPE && Math.abs(dy) < MIN_SWIPE) return;
-
-    if (Math.abs(dx) > Math.abs(dy)){
-      enqueueDir(dx > 0 ? 1 : -1, 0);
+  function getPoint(ev) {
+    var rect = canvas.getBoundingClientRect();
+    var clientX = 0, clientY = 0;
+    if (ev.touches && ev.touches.length) {
+      clientX = ev.touches[0].clientX;
+      clientY = ev.touches[0].clientY;
     } else {
-      enqueueDir(0, dy > 0 ? 1 : -1);
+      clientX = ev.clientX;
+      clientY = ev.clientY;
     }
-    // Reset start to allow continuous control by dragging finger
-    pStartX = p.x; pStartY = p.y;
-  }
-  function onPointerUp(){
-    pDown = false;
+    return { x: clientX - rect.left, y: clientY - rect.top };
   }
 
-  function wireTouchButtons(){
-    // D-pad buttons
-    var dirBtns = document.querySelectorAll("[data-dir]");
-    for (var i = 0; i < dirBtns.length; i++){
-      (function(btn){
-        var dirName = btn.getAttribute("data-dir");
-        btn.addEventListener("pointerdown", function(e){
+  function handleSwipe(ev) {
+    if (!touchActive) return;
+    var p = getPoint(ev);
+    var dx = p.x - startX;
+    var dy = p.y - startY;
+
+    var now = Date.now();
+    if (now - lastDirAt < 40) return; // debounce a bit
+
+    var absX = Math.abs(dx);
+    var absY = Math.abs(dy);
+    var threshold = 18;
+
+    if (absX < threshold && absY < threshold) return;
+
+    if (absX > absY) {
+      pushDir(dx > 0 ? 1 : -1, 0);
+    } else {
+      pushDir(0, dy > 0 ? 1 : -1);
+    }
+    startIfNeeded();
+    lastDirAt = now;
+
+    // reset base point to allow continuous drag
+    startX = p.x;
+    startY = p.y;
+  }
+
+  function onPointerDown(ev) {
+    touchActive = true;
+    var p = getPoint(ev);
+    startX = p.x;
+    startY = p.y;
+    startIfNeeded();
+    try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) {}
+  }
+
+  function onPointerMove(ev) {
+    if (!touchActive) return;
+    ev.preventDefault();
+    handleSwipe(ev);
+  }
+
+  function onPointerUp() { touchActive = false; }
+
+  function wireTouchButtons() {
+    // D-pad
+    var dirBtns = document.querySelectorAll('[data-dir]');
+    for (var i = 0; i < dirBtns.length; i++) {
+      (function (btn) {
+        btn.addEventListener('pointerdown', function (e) {
           e.preventDefault();
-          try { if (navigator.vibrate) navigator.vibrate(10); } catch(err){}
-          if (dirName === "up") enqueueDir(0,-1);
-          if (dirName === "down") enqueueDir(0,1);
-          if (dirName === "left") enqueueDir(-1,0);
-          if (dirName === "right") enqueueDir(1,0);
-        }, { passive:false });
+          var d = btn.getAttribute('data-dir');
+          if (d === 'up') pushDir(0, -1);
+          else if (d === 'down') pushDir(0, 1);
+          else if (d === 'left') pushDir(-1, 0);
+          else if (d === 'right') pushDir(1, 0);
+          startIfNeeded();
+          try { if (navigator.vibrate) navigator.vibrate(10); } catch (ex) {}
+        }, { passive: false });
       })(dirBtns[i]);
     }
 
-    var actBtns = document.querySelectorAll("[data-action]");
-    for (var j = 0; j < actBtns.length; j++){
-      (function(btn){
-        var a = btn.getAttribute("data-action");
-        btn.addEventListener("pointerdown", function(e){
+    // Actions
+    var actBtns = document.querySelectorAll('[data-action]');
+    for (var j = 0; j < actBtns.length; j++) {
+      (function (btn) {
+        btn.addEventListener('pointerdown', function (e) {
           e.preventDefault();
-          if (a === "pause") togglePause();
-          if (a === "restart") restart();
-        }, { passive:false });
+          var a = btn.getAttribute('data-action');
+          if (a === 'pause') togglePause();
+          else if (a === 'restart') resetGame();
+          try { if (navigator.vibrate) navigator.vibrate(15); } catch (ex) {}
+        }, { passive: false });
       })(actBtns[j]);
     }
   }
 
-  // Overlay click/tap behavior:
-  if (overlay) overlay.addEventListener("pointerdown", function(e) {
-    e.preventDefault();
-    if (!started) startIfNeeded();
-    else if (!running) restart();
-    else if (paused) togglePause();
-  }, { passive:false });
+  // Init
+  loadBest();
+  resetGame();
 
-  // Boot
-  window.addEventListener("keydown", onKeyDown, { passive:false });
+  window.addEventListener('keydown', onKey, { passive: false });
 
-  canvas.addEventListener("pointerdown", onPointerDown, { passive:true });
-  canvas.addEventListener("pointermove", onPointerMove, { passive:true });
-  window.addEventListener("pointerup", onPointerUp, { passive:true });
-  window.addEventListener("pointercancel", onPointerUp, { passive:true });
+  // Pointer events on canvas
+  canvas.style.touchAction = 'none';
+  canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+  canvas.addEventListener('pointermove', onPointerMove, { passive: false });
+  window.addEventListener('pointerup', onPointerUp, { passive: true });
+  window.addEventListener('pointercancel', onPointerUp, { passive: true });
 
   wireTouchButtons();
 
-  window.addEventListener("resize", resize);
-
-  resize();
-  resetGame();
+  // Start render loop
+  rafId = window.requestAnimationFrame(loop);
 })();

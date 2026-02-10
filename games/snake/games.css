@@ -224,3 +224,67 @@
   }
   .dpad-btn{ width: 74px; height: 74px; }
 }
+
+
+/* Bonus score celebration */
+#score.score-bonus{color:#f5c842; text-shadow:0 0 16px rgba(245,200,66,.55); transform:scale(1.08);}
+#score{transition:transform .15s ease, color .15s ease, text-shadow .15s ease;}
+
+
+/* Console-like touch controls */
+.touch{margin-top:10px;}
+.touch-panel{
+  background: rgba(10,14,20,.72);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+.dpad{
+  position: relative;
+  width: 140px;
+  height: 140px;
+}
+.dpad-btn{
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.14);
+  color: #eafffb;
+  font-size: 18px;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.18);
+}
+.dpad-btn:active{
+  transform: translateY(1px);
+  box-shadow: 0 0 0 2px rgba(0,255,209,.25), inset 0 0 0 1px rgba(0,0,0,.18);
+}
+.dpad-btn.up{position:absolute; top:0; left:50%; transform:translateX(-50%);}
+.dpad-btn.down{position:absolute; bottom:0; left:50%; transform:translateX(-50%);}
+.dpad-btn.left{position:absolute; left:0; top:50%; transform:translateY(-50%);}
+.dpad-btn.right{position:absolute; right:0; top:50%; transform:translateY(-50%);}
+
+.touch-actions{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.action-btn{
+  min-width: 130px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(0,255,209,.10);
+  border: 1px solid rgba(0,255,209,.20);
+  color: #eafffb;
+  font-weight: 800;
+}
+.action-btn:active{transform: translateY(1px);}
+
+@media (min-width: 900px){
+  .touch{display:none;}
+}
