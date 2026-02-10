@@ -9,18 +9,18 @@
     (function () {
       // Önce daha önce seçilmiş dil varsa onu kullan
       const saved = localStorage.getItem("lang");
-      if (saved === "tr") { location.replace("/tr/"); return; }
-      if (saved === "en") { location.replace("/en/"); return; }
+      if (saved === "tr") { location.replace("./tr/"); return; }
+      if (saved === "en") { location.replace("./en/"); return; }
 
       // Basit ülke tahmini: browser dili TR ise TR'ye at
       // (Cloudflare Pages'de gerçek ülke bilgisi HTML'de yok; en basit yöntem)
       const lang = (navigator.language || "").toLowerCase();
-      if (lang.startsWith("tr")) location.replace("/tr/");
-      else location.replace("/en/");
+      if (lang.startsWith("tr")) location.replace("./tr/");
+      else location.replace("./en/");
     })();
   </script>
   <noscript>
-    <meta http-equiv="refresh" content="0; url=/en/" />
+    <meta http-equiv="refresh" content="0; url=./en/" />
   </noscript>
 </head>
 <body>
