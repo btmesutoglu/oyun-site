@@ -12,7 +12,7 @@
   "game.basketball.desc": "Yakında — farklı konseptte bir mini oyun.",
   "badge.coming": "Yakında",
   "snake.title": "Snake",
-  "snake.hint": "Başlamak için ok tuşlarına bas",
+  "snake.hint": "Başlamak için ok tuşları / WASD / kaydırma kullan",
   "snake.pause": "Duraklatıldı",
   "snake.resume": "Devam etmek için boşluk",
   "snake.gameover": "Oyun bitti",
@@ -21,5 +21,10 @@
   "snake.best": "En iyi",
   "basket.title": "Basketbol",
   "basket.subtitle": "Yakında",
-  "basket.body": "Bu oyun için farklı bir arayüz ve kurallar tasarlanacak. Altyapı hazır — sadece içerik gelecek."
+  "basket.body": "Bu oyun için farklı bir arayüz ve kurallar tasarlanacak. Altyapı hazır — sadece içerik gelecek.",
+  "snake.pauseLabel": "Duraklat",
+  "snake.restartLabel": "Yeniden",
+  "snake.touchhint": "Telefon: sahada kaydır veya yön tuşlarına dokun.",
+  "snake.pauseBtn": "Duraklat",
+  "snake.restartBtn": "Yeniden başlat"
 }
