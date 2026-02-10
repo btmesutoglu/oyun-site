@@ -1,0 +1,16 @@
+/* Placeholder with a different feel (so each game can diverge freely) */
+.b-wrap{ padding-top: 26px; display:flex; justify-content:center; }
+.b-card{
+  width:min(760px, 100%);
+  border-radius: 28px;
+  border: 1px solid rgba(31,42,58,.9);
+  background:
+    radial-gradient(900px 420px at 20% 0%, rgba(99,102,241,.18), transparent 60%),
+    radial-gradient(900px 420px at 80% 20%, rgba(94,234,212,.10), transparent 55%),
+    rgba(17,24,38,.55);
+  box-shadow: var(--shadow);
+  padding: 20px 18px;
+}
+.b-title{ font-weight:900; font-size: 22px; letter-spacing:-.2px; }
+.b-sub{ margin-top:4px; color: var(--muted); font-weight:700; }
+.b-body{ margin-top:12px; color: var(--muted); line-height:1.6; }
