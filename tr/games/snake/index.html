@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#040b1a" />
+  <title>Yılan</title>
+  <link rel="stylesheet" href="../../../assets/style.css" />
+  <link rel="stylesheet" href="./game.css" />
+</head>
+<body>
+<div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="icon">🐍</span>
+        <span class="title">Yılan</span>
+      </div>
+</div>
+  </div>
+
+  <div class="wrap">
+    <div class="hero">
+      <h1>Yılan</h1>
+      <div class="stats">
+        <div class="stat">Skor: <span id="score">0</span></div>
+        <div class="stat">Rekor: <span id="best">0</span></div>
+        <div class="stat">Hız: <span id="speedLabel">8</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="grid">
+        <div class="canvas-box">
+          <canvas id="game" width="600" height="600" aria-label="Snake game" tabindex="0"></canvas>
+
+          <button class="overlay-restart" id="overlayRestart" aria-label="Yeniden başlat" title="Yeniden başlat">↻</button>
+        </div>
+
+        <div class="panel">
+          <div class="row">
+            <button class="btn primary icon" id="btnStart" aria-label="Başlat / Devam" title="Başlat / Devam">▶</button>
+            <button class="btn icon" id="btnPause" aria-label="Duraklat / Devam Et" title="Duraklat / Devam Et">⏸</button>
+            <button class="btn danger icon" id="btnReset" aria-label="Yeniden başlat" title="Yeniden başlat">↻</button>
+          </div>
+
+          <div class="speed">
+            <label>Hız</label>
+
+            <button class="btn icon on" id="btnAuto" aria-label="Otomatik hızlanma" title="Otomatik hızlanma">⚡</button>
+
+            <button class="btn" id="btnSlow">−</button>
+            <input id="speed" type="range" min="2" max="16" step="1" value="8" />
+            <button class="btn" id="btnFast">+</button>
+            <div class="pill" id="speedPill">8</div>
+          </div>
+
+          <div class="dpad" aria-label="Yön tuşları">
+            <div class="empty"></div>
+            <button data-dir="up">▲</button>
+            <div class="empty"></div>
+
+            <button data-dir="left">◀</button>
+            <div class="empty"></div>
+            <button data-dir="right">▶</button>
+
+            <div class="empty"></div>
+            <button data-dir="down">▼</button>
+            <div class="empty"></div>
+          </div>
+
+          <div class="help">
+            <b>Masaüstü:</b> Ok tuşları veya WASD<br/>
+            <b>Mobil:</b> Yön tuşları veya alanda kaydır (swipe)<br/>
+            <b>İpucu:</b> Oyun bitince hız slider ile ayarlanır<br/>
+            <b>Oto hız:</b> ⚡ açıkken oyun zamanla hızlanır (daha yavaş hızlanır)<br/>
+            <b>Büyük lokma:</b> Sarı lokma ara sıra çıkar, yakalarsan +puan ve ekstra uzarsın 😄
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">© 2026 Mini Oyunlar</div>
+    </div>
+  </div>
+
+  <script src="./game.js" defer></script>
+</body>
+</html>
