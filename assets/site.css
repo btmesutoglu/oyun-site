@@ -35,6 +35,7 @@ a{ color:inherit; text-decoration:none; }
   z-index:50;
   background: rgba(11,15,20,.72);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-bottom:1px solid rgba(31,42,58,.7);
 }
 .topbar-inner{
@@ -204,3 +205,12 @@ a{ color:inherit; text-decoration:none; }
 @media (prefers-reduced-motion: reduce){
   *{ scroll-behavior:auto !important; transition:none !important; animation:none !important; }
 }
+
+@media (max-width: 700px){
+  .topbar{ backdrop-filter:none; -webkit-backdrop-filter:none; background: rgba(11,15,20,.92); }
+  .nav{ display:none; }
+  .lang .label{ display:none; }
+}
+
+.game-icon{ font-size:22px; line-height:1; display:inline-flex; align-items:center; justify-content:center; width:28px; }
+.game-title-row{ display:flex; align-items:center; gap:10px; }
