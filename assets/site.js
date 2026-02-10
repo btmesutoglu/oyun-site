@@ -64,8 +64,15 @@
     for (var j = 0; j < btns.length; j++) {
       var b = btns[j];
       var isActive = b.getAttribute('data-lang') === lang;
-      if (isActive) b.classList.add('is-active');
-      else b.classList.remove('is-active');
+      // Keep both class and aria-pressed in sync.
+      // (CSS uses aria-pressed, some pages may use the class.)
+      if (isActive) {
+        b.classList.add('is-active');
+        b.setAttribute('aria-pressed', 'true');
+      } else {
+        b.classList.remove('is-active');
+        b.setAttribute('aria-pressed', 'false');
+      }
     }
   }
 

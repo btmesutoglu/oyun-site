@@ -39,7 +39,9 @@
   var snake = [];
   var dir = { x: 1, y: 0 };        // current direction
   var dirQueue = [];              // queued directions
-  var maxQueue = 2;
+  // Slightly larger queue makes turns feel more responsive.
+  // (Still prevents "buffering" too many moves.)
+  var maxQueue = 4;
 
   var food = null;
   var bonus = null;               // {x,y,expiresAt}
@@ -120,7 +122,8 @@
       if (tries > 200) return; // fail safe
     } while (occupied(x, y) || (food && food.x === x && food.y === y));
     bonus = { x: x, y: y, expiresAt: Date.now() + 6500 };
-    bonusCooldown = 14; // min normal-food count before another bonus
+    // min eaten-food count before another bonus (keeps bonus from feeling "too frequent")
+    bonusCooldown = 10;
   }
 
   function maybeSpawnBonus() {
@@ -132,8 +135,8 @@
       spawnBonus();
       return;
     }
-    // small random chance
-    if (Math.random() < 0.03) {
+    // small random chance (checked only when you eat)
+    if (Math.random() < 0.08) {
       spawnBonus();
     }
   }
@@ -162,10 +165,13 @@
     // titleKey/subKey are literal strings (already translated text passed in)
     ovTitle.textContent = titleKey || '';
     ovSub.textContent = subKey || '';
+    // Support both legacy CSS (.on) and newer class (.is-visible)
+    overlay.classList.add('on');
     overlay.classList.add('is-visible');
   }
 
   function hideOverlay() {
+    overlay.classList.remove('on');
     overlay.classList.remove('is-visible');
   }
 
@@ -176,12 +182,21 @@
   }
 
   function celebrateBonus() {
+    var wrap = document.querySelector('.hud-score');
     scoreEl.classList.remove('score-bonus');
     // force reflow
     scoreEl.offsetWidth;
     scoreEl.classList.add('score-bonus');
+    if (wrap) {
+      wrap.classList.remove('bonus-flash');
+      wrap.offsetWidth;
+      wrap.classList.add('bonus-flash');
+    }
     try { if (navigator.vibrate) navigator.vibrate(30); } catch (e) {}
-    setTimeout(function () { scoreEl.classList.remove('score-bonus'); }, 650);
+    setTimeout(function () {
+      scoreEl.classList.remove('score-bonus');
+      if (wrap) wrap.classList.remove('bonus-flash');
+    }, 650);
   }
 
   function resetGame() {
@@ -293,8 +308,7 @@
     } else {
       // normal move: remove tail
       snake.pop();
-      if (bonusCooldown > 0) bonusCooldown--;
-      maybeSpawnBonus();
+      // Do not spawn bonus on every tick; it becomes too frequent.
     }
 
     // Expire bonus
@@ -367,9 +381,13 @@
     if (!lastTick) lastTick = ts;
     var dt = ts - lastTick;
 
-    if (dt >= tickMs) {
-      lastTick = ts;
+    // If the tab lags, catch up a bit to keep controls consistent.
+    var steps = 0;
+    while (dt >= tickMs && steps < 3) {
+      lastTick += tickMs;
+      dt -= tickMs;
       step();
+      steps++;
     }
 
     draw();
