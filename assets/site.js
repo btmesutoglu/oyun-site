@@ -50,13 +50,13 @@
     document.querySelectorAll("[data-i18n]").forEach(el => {
       const key = el.getAttribute("data-i18n");
       if (!key) return;
-      el.textContent = t(key);
+      if (dict && Object.prototype.hasOwnProperty.call(dict, key)) el.textContent = dict[key];
     });
 
     // Optional: update page title if data-title-i18n is provided on <html>
     const html = document.documentElement;
     const titleKey = html.getAttribute("data-title-i18n");
-    if (titleKey) document.title = t(titleKey);
+    if (titleKey && dict && Object.prototype.hasOwnProperty.call(dict, titleKey)) document.title = dict[titleKey];
 
     // Update active lang UI
     const lang = getLang();
