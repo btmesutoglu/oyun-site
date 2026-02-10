@@ -1,73 +1,77 @@
 <!DOCTYPE html>
-
 <html lang="tr">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
-<meta content="#040b1a" name="theme-color"/>
-<title>Yılan</title>
-<link href="../../../assets/style.css" rel="stylesheet"/>
-<link href="./game.css" rel="stylesheet"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Yılan</title>
+  <link rel="stylesheet" href="../../../assets/style.css" />
 </head>
 <body>
-<div class="topbar">
-<div class="topbar-inner"><div class="brand">
-<span class="icon">🐍</span>
-<span class="title">Yılan</span>
-</div><nav aria-label="Dil seçimi" class="lang"><a class="home" href="../../">← Ana Sayfa</a><a data-lang="tr" href="../../../tr/games/snake/"><img alt="Türk bayrağı" class="flag" src="../../../assets/flags/tr.svg"/><span class="label">Türkçe</span></a><a data-lang="en" href="../../../en/games/snake/"><img alt="UK flag" class="flag" src="../../../assets/flags/gb.svg"/><span class="label">English</span></a></nav></div>
-</div>
-<div class="wrap">
-<div class="hero">
-<h1>Yılan</h1>
-<div class="stats">
-<div class="stat">Skor: <span id="score">0</span></div>
-<div class="stat">Rekor: <span id="best">0</span></div>
-<div class="stat">Hız: <span id="speedLabel">8</span></div>
-</div>
-</div>
-<div class="card">
-<div class="grid">
-<div class="canvas-box">
-<canvas aria-label="Snake game" height="600" id="game" tabindex="0" width="600"></canvas>
-<button aria-label="Yeniden başlat" class="overlay-restart" id="overlayRestart" title="Yeniden başlat">↻</button>
-</div>
-<div class="panel">
-<div class="row">
-<button aria-label="Başlat / Devam" class="btn primary icon" id="btnStart" title="Başlat / Devam">▶</button>
-<button aria-label="Duraklat / Devam Et" class="btn icon" id="btnPause" title="Duraklat / Devam Et">⏸</button>
-<button aria-label="Yeniden başlat" class="btn danger icon" id="btnReset" title="Yeniden başlat">↻</button>
-</div>
-<div class="speed">
-<label>Hız</label>
-<button aria-label="Otomatik hızlanma" class="btn icon on" id="btnAuto" title="Otomatik hızlanma">⚡</button>
-<button class="btn" id="btnSlow">−</button>
-<input id="speed" max="16" min="2" step="1" type="range" value="8"/>
-<button class="btn" id="btnFast">+</button>
-<div class="pill" id="speedPill">8</div>
-</div>
-<div aria-label="Yön tuşları" class="dpad">
-<div class="empty"></div>
-<button data-dir="up">▲</button>
-<div class="empty"></div>
-<button data-dir="left">◀</button>
-<div class="empty"></div>
-<button data-dir="right">▶</button>
-<div class="empty"></div>
-<button data-dir="down">▼</button>
-<div class="empty"></div>
-</div>
-<div class="help">
-<b>Masaüstü:</b> Ok tuşları veya WASD<br/>
-<b>Mobil:</b> Yön tuşları veya alanda kaydır (swipe)<br/>
-<b>İpucu:</b> Oyun bitince hız slider ile ayarlanır<br/>
-<b>Oto hız:</b> ⚡ açıkken oyun zamanla hızlanır (daha yavaş hızlanır)<br/>
-<b>Büyük lokma:</b> Sarı lokma ara sıra çıkar, yakalarsan +puan ve ekstra uzarsın 😄
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="icon">🐍</span>
+        <span class="title" id="pageTitle">Yılan</span>
+      </div>
+
+      <div class="row" style="justify-content:flex-end;">
+        <a class="home" href="../../">← Ana Sayfa</a>
+        <nav aria-label="Dil seçimi" class="lang">
+          <a data-lang="tr" href="../../../tr/">
+            <img class="flag" src="../../../assets/flags/tr.svg" alt="Türk bayrağı" />
+            <span class="label">Türkçe</span>
+          </a>
+          <a data-lang="en" href="../../../en/">
+            <img class="flag" src="../../../assets/flags/gb.svg" alt="UK flag" />
+            <span class="label">English</span>
+          </a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <div class="game-wrap">
+        <div class="card canvas-card">
+          <div class="canvas-box">
+            <canvas id="snake" aria-label="Snake canvas" role="img"></canvas>
+            <div id="overlay" class="overlay">
+              <h2 id="overlayTitle">Yılan</h2>
+              <p id="overlayText">Başlamak için Başlat'a bas veya Space'e bas.</p>
+            </div>
           </div>
-</div>
-</div>
-<div class="footer">© 2026 Mini Oyunlar</div>
-</div>
-</div>
-<script defer="" src="./game.js"></script><script defer="True" src="../../../assets/app.js"></script>
+
+          <div class="row" style="margin-top:12px;">
+            <button class="btn primary" id="btnStart">Başlat</button>
+            <button class="btn danger" id="btnRestart">Yeniden</button>
+          </div>
+          <div class="hint" id="helpText" style="margin-top:10px;">
+            Yön tuşları / WASD ile oyna. Boşluk: duraklat/başlat.
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="stats">
+            <div class="kpi"><div class="k">Skor</div><div class="v" id="score">0</div></div>
+            <div class="kpi"><div class="k">Rekor</div><div class="v" id="best">0</div></div>
+            <div class="kpi"><div class="k">Hız</div><div class="v" id="speed">0</div></div>
+            <div class="kpi"><div class="k">İpucu</div><div class="v" style="font-size:14px; font-weight:800;">🍎 +1, ⭐ +3</div></div>
+          </div>
+
+          <div class="hint">
+            <div>🍎 normal yem</div>
+            <div>⭐ bonus yem kısa süre kalır</div>
+            <div>Duvara veya kendine çarpma = biter</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">© 2026 Mini Oyunlar</div>
+    </section>
+  </main>
+
+  <script src="../../../assets/app.js"></script>
+  <script src="../../../assets/snake.js"></script>
 </body>
 </html>
