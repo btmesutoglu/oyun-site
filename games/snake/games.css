@@ -117,7 +117,7 @@
   padding: 12px 14px;
   border:1px solid rgba(31,42,58,.9);
   border-radius: 18px;
-  background: rgba(17,24,38,.40);
+  background: linear-gradient(180deg, rgba(17,24,38,.55), rgba(9,12,18,.55));
 }
 .touch-hint{
   color: var(--muted);
@@ -131,25 +131,45 @@
   justify-content:space-between;
 }
 .dpad{
-  width: 160px;
-  height: 160px;
+  width: 220px;
+  height: 220px;
   display:grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr;
-  gap:10px;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 22px;
+  border:1px solid rgba(31,42,58,.95);
+  background: radial-gradient(120px 120px at 50% 35%, rgba(34,197,94,.10), rgba(9,12,18,.75));
+  position:relative;
+}
+.dpad::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width: 34px;
+  height: 34px;
+  transform: translate(-50%,-50%);
+  border-radius: 12px;
+  border:1px solid rgba(31,42,58,.95);
+  background: rgba(9,12,18,.85);
+  box-shadow: 0 0 0 2px rgba(255,255,255,.03) inset;
 }
 .dpad-btn{
-  border-radius: 14px;
-  border:1px solid rgba(31,42,58,.9);
-  background: rgba(9,12,18,.55);
-  color: var(--text);
-  font-size: 22px;
+  border-radius: 18px;
+  border:1px solid rgba(31,42,58,.95);
+  background: rgba(9,12,18,.85);
+  color: rgba(226,232,240,.92);
+  font-size: 26px;
   font-weight: 900;
   cursor:pointer;
   user-select:none;
+  box-shadow: 0 10px 22px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.04) inset;
+  transition: transform .06s ease, box-shadow .10s ease, background .12s ease;
   -webkit-tap-highlight-color: transparent;
 }
-.dpad-btn:active{ transform: translateY(1px); }
+.dpad-btn:active{ transform: translateY(1px) scale(.98); box-shadow: 0 0 0 1px rgba(34,197,94,.25) inset, 0 0 18px rgba(34,197,94,.18); }
 .dpad-btn.up{ grid-column:2; grid-row:1; }
 .dpad-btn.left{ grid-column:1; grid-row:2; }
 .dpad-btn.right{ grid-column:3; grid-row:2; }
@@ -202,5 +222,5 @@
     border:1px solid rgba(31,42,58,.9);
     background: rgba(11,15,20,.70);
   }
-  .dpad-btn{ width: 64px; height: 64px; }
+  .dpad-btn{ width: 74px; height: 74px; }
 }

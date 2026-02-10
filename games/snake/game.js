@@ -9,7 +9,7 @@
  *
  * i18n: uses window.__t(key) from /assets/site.js when available
  */
-(() => {
+(function(){
   const canvas = document.getElementById("c");
   const ctx = canvas.getContext("2d");
 
@@ -21,23 +21,28 @@
 
   const BEST_KEY = "snake_best_v2";
 
-  function flashBonus(){
+  function flashBonus(isBonus){
     if (!scoreEl) return;
     scoreEl.classList.add("flash-bonus");
-    window.setTimeout(() => scoreEl.classList.remove("flash-bonus"), 260);
+    window.setTimeout(function(){ scoreEl.classList.remove("flash-bonus"); }, 650);
   }
 
 
   // Game tuning
   const GRID = 28;              // 28x28 cells
-  const STEP_MS = 78;           // base speed (lower = faster)
+  const STEP_MS_START = 170;   // start slow (Nokia-ish)
+const STEP_MS_MIN   = 70;    // max speed cap
+const STEP_MS_DECAY = 4;     // speed up per normal food
+const STEP_MS_BONUS_DECAY = 8; // extra speed up on bonus
+let stepMs = STEP_MS_START;
   const MIN_SWIPE = 12;         // px threshold for direction change
 
   // Bonus tuning
   const BONUS_SCORE = 50;
   const BONUS_TTL_STEPS = 110;  // ~ 8-9 seconds depending on speed
-  const BONUS_EVERY = 5;        // guaranteed bonus every 5 normal foods
-  const BONUS_RANDOM_CHANCE = 0.15; // plus random chance on any normal food
+  const BONUS_EVERY = 10;        // guaranteed bonus every 10 normal foods
+  const BONUS_RANDOM_CHANCE = 0.05; // low random chance
+const BONUS_MIN_FOODS_GAP = 8; // min foods between bonuses
 
   let cell = 20; // computed in resize()
   let dpr = 1;
@@ -62,9 +67,11 @@
   let acc = 0;
 
   let normalEaten = 0;
+  let foodsSinceBonus = 999;
 
-  function t(key){
-    return (typeof window.__t === "function") ? window.__t(key) : key;
+  function t(key, fallback){
+    if (typeof window.__t === "function") return window.__t(key, fallback);
+    return (fallback != null) ? String(fallback) : String(key);
   }
 
   function clampWrap(n){
@@ -81,7 +88,8 @@
   }
 
   function isOnSnake(p){
-    return snake.some(s => s.x === p.x && s.y === p.y);
+    for (var i = 0; i < snake.length; i++){ var s = snake[i]; if (s.x === p.x && s.y === p.y) return true; }
+    return false;
   }
 
   function spawnFood(){
@@ -108,8 +116,8 @@
   }
 
   function showOverlay(titleKey, subKey){
-    ovTitle.textContent = t(titleKey);
-    ovSub.textContent = t(subKey);
+    ovTitle.textContent = t(titleKey, ovTitle.textContent);
+    ovSub.textContent = t(subKey, ovSub.textContent);
     overlay.classList.add("on");
   }
   function hideOverlay(){
@@ -127,6 +135,8 @@
     running = false;
     started = false;
     normalEaten = 0;
+    foodsSinceBonus = 999;
+    stepMs = STEP_MS_START;
     bonus = { active:false, x:0, y:0, ttl:0 };
     spawnFood();
     updateHud();
@@ -228,20 +238,28 @@
       pendingGrow += 2; // bonus grows a bit more
       bonus.active = false;
       bonus.ttl = 0;
-      flashBonus();
+      flashBonus(true);
+      foodsSinceBonus = 0;
+      stepMs = Math.max(STEP_MS_MIN, stepMs - STEP_MS_BONUS_DECAY);
     }
 
     if (ateNormal){
       score += 10;
       pendingGrow += 1;
       normalEaten++;
+      foodsSinceBonus++;
+
+      // Speed up gradually
+      stepMs = Math.max(STEP_MS_MIN, stepMs - STEP_MS_DECAY);
 
       // Always respawn normal food first
       spawnFood();
 
-      // Bonus rule: (C) guaranteed every N foods + also random chance
-      if (!bonus.active && (normalEaten % BONUS_EVERY === 0 || Math.random() < BONUS_RANDOM_CHANCE)){
+      // Bonus rule: guaranteed every N foods + small random chance, but not too frequent
+      const wantBonus = (normalEaten % BONUS_EVERY === 0) || (Math.random() < BONUS_RANDOM_CHANCE);
+      if (!bonus.active && wantBonus && foodsSinceBonus >= BONUS_MIN_FOODS_GAP){
         spawnBonus();
+        foodsSinceBonus = 0;
       }
     }
 
@@ -272,9 +290,9 @@
     // Cap huge jumps (tab switch)
     acc += Math.min(200, dt);
 
-    while (acc >= STEP_MS){
+    while (acc >= stepMs){
       step();
-      acc -= STEP_MS;
+      acc -= stepMs;
     }
 
     draw();
@@ -288,8 +306,8 @@
     const h = w;
 
     dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
-    canvas.style.width = `${w}px`;
-    canvas.style.height = `${h}px`;
+    canvas.style.width = String(w) + "px";
+    canvas.style.height = String(h) + "px";
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
 
@@ -353,7 +371,7 @@
     // Food (square, Nokia vibe)
     ctx.save();
     ctx.fillStyle = "#5eead4";
-    drawRectCell(food.x, food.y, cell*0.22, 0);
+    drawRectCell(food.x, food.y, 0, 0);
     ctx.restore();
 
     // Bonus (bigger square, gold blink)
@@ -362,8 +380,7 @@
       ctx.save();
       ctx.globalAlpha = blinkOn ? 1.0 : 0.35;
       ctx.fillStyle = "#fbbf24";
-      const inset = cell*0.08; // bigger than normal food
-      drawRectCell(bonus.x, bonus.y, inset, 0);
+      drawRectCell(bonus.x, bonus.y, 0, 0);
       ctx.restore();
     }
 
@@ -373,7 +390,7 @@
       const isHead = i === 0;
       ctx.save();
       ctx.fillStyle = isHead ? "#e8eef7" : "rgba(232,238,247,.70)";
-      const inset = isHead ? cell*0.10 : cell*0.15;
+      const inset = 0;
       drawRectCell(s.x, s.y, inset, 0);
       ctx.restore();
     }
@@ -435,30 +452,36 @@
 
   function wireTouchButtons(){
     // D-pad buttons
-    document.querySelectorAll("[data-dir]").forEach(btn => {
-      const dirName = btn.getAttribute("data-dir");
-      btn.addEventListener("pointerdown", (e) => {
-        e.preventDefault();
-        if (navigator.vibrate) navigator.vibrate(10);
-        if (dirName === "up") enqueueDir(0,-1);
-        if (dirName === "down") enqueueDir(0,1);
-        if (dirName === "left") enqueueDir(-1,0);
-        if (dirName === "right") enqueueDir(1,0);
-      }, { passive:false });
-    });
+    var dirBtns = document.querySelectorAll("[data-dir]");
+    for (var i = 0; i < dirBtns.length; i++){
+      (function(btn){
+        var dirName = btn.getAttribute("data-dir");
+        btn.addEventListener("pointerdown", function(e){
+          e.preventDefault();
+          try { if (navigator.vibrate) navigator.vibrate(10); } catch(err){}
+          if (dirName === "up") enqueueDir(0,-1);
+          if (dirName === "down") enqueueDir(0,1);
+          if (dirName === "left") enqueueDir(-1,0);
+          if (dirName === "right") enqueueDir(1,0);
+        }, { passive:false });
+      })(dirBtns[i]);
+    }
 
-    document.querySelectorAll("[data-action]").forEach(btn => {
-      const a = btn.getAttribute("data-action");
-      btn.addEventListener("pointerdown", (e) => {
-        e.preventDefault();
-        if (a === "pause") togglePause();
-        if (a === "restart") restart();
-      }, { passive:false });
-    });
+    var actBtns = document.querySelectorAll("[data-action]");
+    for (var j = 0; j < actBtns.length; j++){
+      (function(btn){
+        var a = btn.getAttribute("data-action");
+        btn.addEventListener("pointerdown", function(e){
+          e.preventDefault();
+          if (a === "pause") togglePause();
+          if (a === "restart") restart();
+        }, { passive:false });
+      })(actBtns[j]);
+    }
   }
 
   // Overlay click/tap behavior:
-  overlay?.addEventListener("pointerdown", (e) => {
+  if (overlay) overlay.addEventListener("pointerdown", function(e) {
     e.preventDefault();
     if (!started) startIfNeeded();
     else if (!running) restart();

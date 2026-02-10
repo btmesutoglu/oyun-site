@@ -1,110 +1,151 @@
 /**
- * site.js
- * - Language selection (TR/EN) stored in localStorage
- * - Loads locales/<lang>.json relative to this script location (works on Cloudflare Pages, subpaths, and file://)
- * - Applies translations on elements with [data-i18n]
- * - Exposes window.__t(key) and window.__setLang(lang)
+ * site.js (shared)
+ * - Language (TR/EN) stored in localStorage
+ * - Lightweight i18n loader: /locales/{lang}.json
+ * - Exposes window.__t(key, fallback) for game scripts
  */
-(() => {
-  const LANG_KEY = "lang";
-  const SUPPORTED = ["tr", "en"];
-  const DEFAULT_LANG = (() => {
-    const nav = (navigator.language || "en").toLowerCase();
-    return nav.startsWith("tr") ? "tr" : "en";
-  })();
+(function () {
+  "use strict";
 
-  /** @type {Record<string,string> | null} */
-  let dict = null;
+  var LANG_KEY = "lang";
+  var dict = null;
+
+  function getStoredLang() {
+    try {
+      var v = localStorage.getItem(LANG_KEY);
+      return (v === "en" || v === "tr") ? v : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function getDefaultLang() {
+    var htmlLang = (document.documentElement.getAttribute("lang") || "").toLowerCase();
+    if (htmlLang.indexOf("en") === 0) return "en";
+    return "tr";
+  }
 
   function getLang() {
-    const saved = localStorage.getItem(LANG_KEY);
-    if (saved && SUPPORTED.includes(saved)) return saved;
-    return DEFAULT_LANG;
+    return getStoredLang() || getDefaultLang();
   }
 
-  // Determine site root relative to the loaded site.js file.
+  function setStoredLang(lang) {
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+  }
+
   function getRootBase() {
-    const scripts = Array.from(document.scripts || []);
-    const me = scripts.find(s => (s.src || "").includes("/assets/site.js")) || scripts.find(s => (s.src || "").endsWith("assets/site.js"));
-    const src = me?.src || (document.currentScript && document.currentScript.src) || "";
+    // Determine site root relative to the loaded site.js file.
+    var scripts = document.getElementsByTagName("script");
+    var src = "";
+    for (var i = 0; i < scripts.length; i++) {
+      var s = scripts[i];
+      var u = s.getAttribute("src") || "";
+      if (u.indexOf("/assets/site.js") !== -1 || u.slice(-12) === "assets/site.js") {
+        src = s.src || u;
+        break;
+      }
+    }
+    if (!src && document.currentScript) src = document.currentScript.src || "";
     if (!src) return "./";
-    // src like .../assets/site.js -> root is ../
-    return new URL("../", src).toString();
+    try {
+      return new URL("../", src).toString();
+    } catch (e) {
+      return "./";
+    }
   }
 
-  const ROOT = getRootBase();
+  var ROOT = getRootBase();
 
-  async function loadDict(lang) {
-    const url = new URL(`locales/${lang}.json`, ROOT).toString();
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(`Locale load failed: ${lang}`);
-    dict = await res.json();
+  function t(key, fallback) {
+    if (!key) return "";
+    if (dict && Object.prototype.hasOwnProperty.call(dict, key)) return String(dict[key]);
+    return (fallback != null) ? String(fallback) : String(key);
   }
 
-  function t(key) {
-    if (!dict) return key;
-    return dict[key] ?? key;
+  // Expose for games
+  window.__t = t;
+
+  function qsAll(sel, root) {
+    return Array.prototype.slice.call((root || document).querySelectorAll(sel));
   }
 
-  function applyTranslations() {
-    document.querySelectorAll("[data-i18n]").forEach(el => {
-      const key = el.getAttribute("data-i18n");
+  function setActiveLangButton(lang) {
+    qsAll("[data-lang]").forEach(function (a) {
+      var isActive = a.getAttribute("data-lang") === lang;
+      if (isActive) a.classList.add("is-active");
+      else a.classList.remove("is-active");
+    });
+  }
+
+  function applyI18n() {
+    // Text nodes
+    qsAll("[data-i18n]").forEach(function (el) {
+      var key = el.getAttribute("data-i18n") || "";
       if (!key) return;
-      if (dict && Object.prototype.hasOwnProperty.call(dict, key)) el.textContent = dict[key];
+      // Only override when we have a translation. Otherwise keep the existing HTML text.
+      if (dict && Object.prototype.hasOwnProperty.call(dict, key)) {
+        el.textContent = t(key);
+      }
     });
 
-    // Optional: update page title if data-title-i18n is provided on <html>
-    const html = document.documentElement;
-    const titleKey = html.getAttribute("data-title-i18n");
-    if (titleKey && dict && Object.prototype.hasOwnProperty.call(dict, titleKey)) document.title = dict[titleKey];
-
-    // Update active lang UI
-    const lang = getLang();
-    document.querySelectorAll("[data-lang]").forEach(btn => {
-      const is = btn.getAttribute("data-lang") === lang;
-      btn.setAttribute("aria-pressed", is ? "true" : "false");
-      btn.classList.toggle("is-active", is);
-    });
-
-    // Set <html lang="">
-    document.documentElement.setAttribute("lang", lang);
+    // Document title (optional)
+    var titleKey = document.documentElement.getAttribute("data-title-i18n");
+    if (titleKey && dict && Object.prototype.hasOwnProperty.call(dict, titleKey)) {
+      document.title = t(titleKey);
+    }
   }
 
-  async function setLang(lang) {
-    if (!SUPPORTED.includes(lang)) return;
-    localStorage.setItem(LANG_KEY, lang);
-    await loadDict(lang);
-    applyTranslations();
+  function loadDict(lang) {
+    var url = ROOT + "locales/" + lang + ".json";
+    return fetch(url, { cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("Locale HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (j) {
+        dict = j || {};
+      })
+      .catch(function () {
+        // If locales can't be fetched (e.g., file://), keep dict empty and keep existing page texts.
+        dict = {};
+      });
+  }
+
+  function setLang(lang) {
+    if (lang !== "tr" && lang !== "en") lang = "tr";
+    setStoredLang(lang);
+    document.documentElement.setAttribute("lang", lang);
+    setActiveLangButton(lang);
+    return loadDict(lang).then(function () {
+      applyI18n();
+      // let games refresh their own labels (score, overlay etc.)
+      try {
+        if (typeof window.__onLangChanged === "function") window.__onLangChanged(lang);
+      } catch (e) {}
+    });
   }
 
   function wireLangButtons() {
-    document.querySelectorAll("[data-lang]").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const lang = btn.getAttribute("data-lang");
-        if (!lang) return;
-        try {
-          await setLang(lang);
-        } catch (e) {
-          console.error(e);
-        }
-      });
+    qsAll("[data-lang]").forEach(function (a) {
+      a.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        var lang = a.getAttribute("data-lang") || "tr";
+        setLang(lang);
+      }, { passive: false });
     });
   }
 
-  // Boot
-  (async () => {
-    try {
-      await loadDict(getLang());
-    } catch (e) {
-      console.warn("Locale load failed, continuing with keys.", e);
-      dict = null;
-    }
-    applyTranslations();
+  function boot() {
     wireLangButtons();
-  })();
+    var lang = getLang();
+    document.documentElement.setAttribute("lang", lang);
+    setActiveLangButton(lang);
+    loadDict(lang).then(applyI18n);
+  }
 
-  window.__t = t;
-  window.__setLang = setLang;
-  window.__getLang = getLang;
-  window.__rootBase = ROOT;
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
 })();
