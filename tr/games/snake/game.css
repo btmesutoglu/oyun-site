@@ -1,0 +1,225 @@
+/* Snake-only: tam ekran, sayfa kaymasın */
+html, body{
+  height:100%;
+  overflow:hidden;
+}
+body{
+  position:fixed;
+  inset:0;
+  overscroll-behavior: none;
+}
+
+/* Snake layout */
+.wrap{
+  max-width:1100px;
+  margin:0 auto;
+  padding: 18px 16px 18px;
+  height: calc(100svh - 64px);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+.hero{
+  text-align:center;
+  padding: 14px 8px 10px;
+}
+.hero h1{
+  margin:8px 0 6px;
+  font-size: clamp(28px, 4vw, 44px);
+  letter-spacing:.3px;
+}
+.stats{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:14px;
+  color:var(--muted);
+  font-weight:600;
+}
+.stat{
+  padding:8px 12px;
+  border:1px solid var(--stroke);
+  background: rgba(255,255,255,.04);
+  border-radius: 999px;
+}
+
+.card{
+  margin-top: 14px;
+  padding: 16px;
+  flex:1;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+.grid{
+  grid-template-columns: 1fr 360px;
+  flex:1;
+  min-height:0;
+  overflow:hidden;
+}
+@media (max-width: 900px){
+  .grid{grid-template-columns: 1fr;}
+}
+
+.canvas-box{
+  position: relative;
+  border-radius: var(--r);
+  border:1px solid var(--stroke);
+  background: rgba(0,0,0,.18);
+  padding: 12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex:1;
+  min-height: 0;
+}
+
+canvas{
+  width: min(480px, 70vmin);
+  max-width: 480px;
+  aspect-ratio: 1 / 1;
+  height:auto;
+  border-radius: 14px;
+  background: rgba(0,0,0,.22);
+  display:block;
+  touch-action: none;
+  outline: none;
+}
+@media (max-width: 420px){
+  canvas{ width: min(360px, 94vw); }
+}
+
+.speed{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  width:100%;
+}
+.speed label{color:var(--muted); font-weight:700}
+.speed input[type="range"]{
+  width:100%;
+  accent-color: var(--accent);
+}
+.pill{
+  min-width: 44px;
+  text-align:center;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border:1px solid var(--stroke);
+  background: rgba(255,255,255,.05);
+  font-weight:800;
+}
+
+/* Speed controls locked while playing (except auto) */
+.speed.locked{ opacity: .75; }
+.speed.locked input,
+.speed.locked button:not(#btnAuto){
+  pointer-events: none;
+}
+.speed.locked input{ filter: grayscale(1); }
+
+.dpad{
+  display:grid;
+  grid-template-columns: 70px 70px 70px;
+  grid-template-rows: 70px 70px 70px;
+  gap: 10px;
+  justify-content:center;
+  align-content:center;
+  padding-top: 6px;
+}
+@media (max-width: 420px){
+  .dpad{
+    grid-template-columns: 62px 62px 62px;
+    grid-template-rows: 62px 62px 62px;
+    gap: 8px;
+  }
+}
+.dpad button{
+  border:1px solid var(--stroke);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  border-radius: 16px;
+  font-size: 20px;
+  font-weight: 900;
+  cursor:pointer;
+  user-select:none;
+  -webkit-tap-highlight-color: transparent;
+}
+.dpad button:active{transform: translateY(1px); background: rgba(255,255,255,.10)}
+.dpad .empty{visibility:hidden}
+
+.help{
+  margin-top:auto;
+  color:var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+/* Game-over restart overlay button */
+.overlay-restart{
+  position:absolute;
+  inset: 0;
+  margin:auto;
+  width: 78px;
+  height: 78px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(0,0,0,.45);
+  color: rgba(255,255,255,.95);
+  font-size: 34px;
+  font-weight: 900;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  box-shadow: 0 18px 40px rgba(0,0,0,.35);
+  backdrop-filter: blur(8px);
+}
+.overlay-restart.show{ display:flex; }
+.overlay-restart:active{ transform: translateY(1px); }
+
+/* Mobile: panel altta sabit + büyük tuşlar */
+@media (max-width: 900px){
+  .hero{ padding: 8px 6px 6px; }
+  .stats{ gap: 8px; }
+  .stat{ padding: 6px 10px; }
+
+  .wrap{ padding: 10px 12px 10px; height: calc(100svh - 58px); }
+
+  .card{ margin-top: 10px; padding: 10px; padding-bottom: 260px; }
+
+  .grid{ gap: 12px; }
+
+  .canvas-box{ padding: 10px; }
+
+  .panel{
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: max(10px, env(safe-area-inset-bottom));
+    width: min(480px, calc(100vw - 20px));
+    z-index: 20;
+    background: rgba(0,0,0,.22);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 18px 45px rgba(0,0,0,.45);
+  }
+
+  .dpad{
+    --s: 76px;
+    grid-template-columns: var(--s) var(--s) var(--s);
+    grid-template-rows: var(--s) var(--s) var(--s);
+    gap: 10px;
+    padding-top: 2px;
+  }
+  .dpad button{
+    font-size: 24px;
+    border-radius: 18px;
+  }
+
+  .btn.icon{ width: 52px; height: 52px; border-radius: 16px; font-size: 20px; }
+  .btn{ padding: 12px 16px; border-radius: 16px; }
+
+  .help{ display:none; }
+}
