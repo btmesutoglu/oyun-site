@@ -1,3 +1,19 @@
+
+  // ===== i18n (TR/EN) =====
+  const LANG = ((document.documentElement.getAttribute('lang')||'').toLowerCase().startsWith('tr') || localStorage.getItem('lang')==='tr') ? 'tr' : 'en';
+  const I18N = {
+    tr: {
+      press_to_start: 'Bir yön tuşuna bas • veya ▶',
+      paused: 'Duraklatıldı',
+      game_over: 'Bitti! ↻ ile yeniden'
+    },
+    en: {
+      press_to_start: 'Press an arrow key • or ▶',
+      paused: 'Paused',
+      game_over: 'Game over! ↻ to restart'
+    }
+  };
+  const t = (k) => (I18N[LANG] && I18N[LANG][k]) || I18N.en[k] || k;
 (() => {
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
@@ -520,11 +536,11 @@
 
     // overlays
     if (!running){
-      overlayText('Bir yön tuşuna bas • veya ▶');
+      overlayText(t('press_to_start'));
     } else if (paused && !gameOverFlag){
-      overlayText('Duraklatıldı');
+      overlayText(t('paused'));
     } else if (paused && gameOverFlag){
-      overlayText('Bitti! ↻ ile yeniden');
+      overlayText(t('game_over'));
     }
   }
 
