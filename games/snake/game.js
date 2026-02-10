@@ -21,6 +21,13 @@
 
   const BEST_KEY = "snake_best_v2";
 
+  function flashBonus(){
+    if (!scoreEl) return;
+    scoreEl.classList.add("flash-bonus");
+    window.setTimeout(() => scoreEl.classList.remove("flash-bonus"), 260);
+  }
+
+
   // Game tuning
   const GRID = 28;              // 28x28 cells
   const STEP_MS = 78;           // base speed (lower = faster)
@@ -221,6 +228,7 @@
       pendingGrow += 2; // bonus grows a bit more
       bonus.active = false;
       bonus.ttl = 0;
+      flashBonus();
     }
 
     if (ateNormal){
@@ -345,15 +353,17 @@
     // Food (square, Nokia vibe)
     ctx.save();
     ctx.fillStyle = "#5eead4";
-    drawRectCell(food.x, food.y, cell*0.24, 6);
+    drawRectCell(food.x, food.y, cell*0.22, 0);
     ctx.restore();
 
-    // Bonus (bigger square)
+    // Bonus (bigger square, gold blink)
     if (bonus.active){
+      const blinkOn = (Math.floor(performance.now() / 180) % 2) === 0;
       ctx.save();
-      ctx.fillStyle = "#a78bfa";
-      const inset = cell*0.10; // bigger
-      drawRectCell(bonus.x, bonus.y, inset, 8);
+      ctx.globalAlpha = blinkOn ? 1.0 : 0.35;
+      ctx.fillStyle = "#fbbf24";
+      const inset = cell*0.08; // bigger than normal food
+      drawRectCell(bonus.x, bonus.y, inset, 0);
       ctx.restore();
     }
 
@@ -363,8 +373,8 @@
       const isHead = i === 0;
       ctx.save();
       ctx.fillStyle = isHead ? "#e8eef7" : "rgba(232,238,247,.70)";
-      const inset = isHead ? cell*0.14 : cell*0.18;
-      drawRectCell(s.x, s.y, inset, isHead ? 8 : 7);
+      const inset = isHead ? cell*0.10 : cell*0.15;
+      drawRectCell(s.x, s.y, inset, 0);
       ctx.restore();
     }
   }
@@ -429,6 +439,7 @@
       const dirName = btn.getAttribute("data-dir");
       btn.addEventListener("pointerdown", (e) => {
         e.preventDefault();
+        if (navigator.vibrate) navigator.vibrate(10);
         if (dirName === "up") enqueueDir(0,-1);
         if (dirName === "down") enqueueDir(0,1);
         if (dirName === "left") enqueueDir(-1,0);
