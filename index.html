@@ -1,28 +1,74 @@
 <!doctype html>
-<html lang="en">
+<html lang="tr" data-title-i18n="site.title">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mini Games</title>
-  <meta name="robots" content="noindex" />
-  <script>
-    (function () {
-      // Önce daha önce seçilmiş dil varsa onu kullan
-      const saved = localStorage.getItem("lang");
-      if (saved === "tr") { location.replace("./tr/"); return; }
-      if (saved === "en") { location.replace("./en/"); return; }
-
-      // Basit ülke tahmini: browser dili TR ise TR'ye at
-      // (Cloudflare Pages'de gerçek ülke bilgisi HTML'de yok; en basit yöntem)
-      const lang = (navigator.language || "").toLowerCase();
-      if (lang.startsWith("tr")) location.replace("./tr/");
-      else location.replace("./en/");
-    })();
-  </script>
-  <noscript>
-    <meta http-equiv="refresh" content="0; url=./en/" />
-  </noscript>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="/assets/site.css" />
+  <script src="/assets/site.js" defer></script>
 </head>
 <body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/">
+        <span class="dot" aria-hidden="true"></span>
+        <span data-i18n="site.title">Mini Oyunlar</span>
+      </a>
+
+      <nav class="nav" aria-label="primary">
+        <a href="/" data-i18n="nav.home">Ana Sayfa</a>
+        <a href="#games" data-i18n="nav.games">Oyunlar</a>
+      </nav>
+
+      <div class="lang" aria-label="language switcher">
+        <button type="button" data-lang="tr" aria-pressed="true" title="Türkçe">
+          <img class="flag" src="/assets/flags/tr.svg" alt="TR" />
+          TR
+        </button>
+        <button type="button" data-lang="en" aria-pressed="false" title="English">
+          <img class="flag" src="/assets/flags/en.svg" alt="EN" />
+          EN
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1 class="h1" data-i18n="home.headline">Mini Oyun Sitesi</h1>
+      <p class="p" data-i18n="home.sub">Basit, hızlı, tarayıcıda çalışan mini oyunlar.</p>
+    </section>
+
+    <section id="games">
+      <p class="p" data-i18n="home.choose">Bir oyun seç:</p>
+
+      <div class="grid" role="list">
+        <article class="card" role="listitem">
+          <div class="card-title">
+            <span data-i18n="game.snake.name">Snake</span>
+          </div>
+          <p class="card-desc" data-i18n="game.snake.desc">Klasik yılan oyunu — puan topla, duvara çarpma.</p>
+          <a class="card-cta" href="/games/snake/" aria-label="Snake">Play</a>
+        </article>
+
+        <article class="card" role="listitem">
+          <div class="card-title">
+            <span data-i18n="game.basketball.name">Basketbol</span>
+            <span class="badge" data-i18n="badge.coming">Yakında</span>
+          </div>
+          <p class="card-desc" data-i18n="game.basketball.desc">Yakında — farklı konseptte bir mini oyun.</p>
+          <a class="card-cta" href="/games/basketball/" aria-label="Basketball">Open</a>
+        </article>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>© <span id="y"></span> <span data-i18n="site.title">Mini Oyunlar</span></div>
+      <div style="margin-top:8px">Snake: <span class="kbd">↑</span><span class="kbd">↓</span><span class="kbd">←</span><span class="kbd">→</span> · Pause: <span class="kbd">Space</span></div>
+    </footer>
+  </main>
+
+  <script>
+    document.getElementById("y").textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
