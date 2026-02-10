@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="tr" data-title-i18n="snake.title">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="/assets/site.css" />
+  <link rel="stylesheet" href="./game.css" />
+  <script src="/assets/site.js" defer></script>
+  <script src="./game.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/">
+        <span class="dot" aria-hidden="true"></span>
+        <span data-i18n="site.title">Mini Oyunlar</span>
+      </a>
+
+      <nav class="nav" aria-label="primary">
+        <a href="/" data-i18n="nav.home">Ana Sayfa</a>
+        <a href="/" data-i18n="nav.games">Oyunlar</a>
+      </nav>
+
+      <div class="lang" aria-label="language switcher">
+        <button type="button" data-lang="tr" aria-pressed="true" title="Türkçe">
+          <img class="flag" src="/assets/flags/tr.svg" alt="TR" />
+          TR
+        </button>
+        <button type="button" data-lang="en" aria-pressed="false" title="English">
+          <img class="flag" src="/assets/flags/en.svg" alt="EN" />
+          EN
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container game-shell">
+    <div class="snake-wrap">
+      <div class="hud">
+        <div class="hud-left">
+          <div class="hud-title" data-i18n="snake.title">Snake</div>
+          <div class="hud-hint" data-i18n="snake.hint">Başlamak için ok tuşlarına bas</div>
+        </div>
+        <div class="hud-right">
+          <div class="hud-score"><span data-i18n="snake.score">Skor</span>: <span id="score">0</span></div>
+          <div class="hud-best"><span data-i18n="snake.best">En iyi</span>: <span id="best">0</span></div>
+        </div>
+      </div>
+
+      <div class="stage">
+        <canvas id="c" width="560" height="560" aria-label="snake canvas"></canvas>
+        <div class="overlay" id="overlay" aria-live="polite">
+          <div class="overlay-box">
+            <div class="overlay-title" id="ov-title"> </div>
+            <div class="overlay-sub" id="ov-sub"> </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <span class="kbd">↑</span><span class="kbd">↓</span><span class="kbd">←</span><span class="kbd">→</span>
+        <span class="sep">·</span>
+        <span class="kbd">Space</span> Pause
+        <span class="sep">·</span>
+        <span class="kbd">Enter</span> Restart
+      </div>
+    </div>
+  </main>
+</body>
+</html>
