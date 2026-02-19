@@ -549,3 +549,21 @@
   // Start render loop
   rafId = window.requestAnimationFrame(loop);
 })();
+
+
+// Prevent page scroll/overscroll while interacting with the game area on mobile
+(function lockScrollOnGameArea(){
+  const isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  if(!isCoarse) return;
+
+  const blocker = (e) => {
+    const t = e.target;
+    if(t && t.closest && t.closest('.stage, .touch')){
+      e.preventDefault();
+    }
+  };
+
+  // Block drag/scroll gestures
+  document.addEventListener('touchmove', blocker, { passive: false });
+})();
+
