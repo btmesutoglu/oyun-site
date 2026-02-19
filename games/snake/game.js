@@ -21,7 +21,7 @@
   var BEST_KEY = 'snake_best_v3';
 
   // Grid
-  var GRID = 28; // 28x28
+  var GRID = 24; // 24x24 (slightly smaller playfield)
   var CELL = Math.floor(canvas.width / GRID);
 
   // Visual gap between squares (to avoid "merged" look)
@@ -53,10 +53,10 @@
   var best = 0;
 
   var running = false;
-  var paused = false;
-  var tickMs = 180;               // start slow
-  var tickMin = 75;               // speed cap
-  var tickStep = 6;               // speed-up step per food
+  var tickStart = 190;            // starts comfy
+  var tickMin = 115;              // do not go faster than this
+  var tickDecay = 0.965;          // exponential easing per food
+  var tickMs = tickStart;
 
   var rafId = null;
   var lastTick = 0;
@@ -205,7 +205,7 @@
     bonusCooldown = 0;
     dirQueue = [];
     dir = { x: 1, y: 0 };
-    tickMs = 180;
+    tickMs = tickStart;
 
     snake = [
       { x: 8, y: 12 },
@@ -218,9 +218,7 @@
     maybeSpawnBonus();
 
     running = false;
-    paused = false;
-
-    // Overlay text: use DOM texts (already localized)
+// Overlay text: use DOM texts (already localized)
     var title = document.querySelector('[data-i18n="snake.title"]');
     var hint = document.querySelector('[data-i18n="snake.hint"]');
     showOverlay(title ? title.textContent : 'Snake', hint ? hint.textContent : '');
@@ -228,31 +226,26 @@
 
   function gameOver() {
     running = false;
-    paused = false;
-    var over = (document.querySelector('[data-i18n="snake.gameover"]') || {}).textContent || 'Oyun bitti';
+var over = (document.querySelector('[data-i18n="snake.gameover"]') || {}).textContent || 'Oyun bitti';
     var restart = (document.querySelector('[data-i18n="snake.restart"]') || {}).textContent || 'Tekrar: Enter';
     showOverlay(over, restart);
   }
-
-  function togglePause() {
-    if (!running) return;
-    paused = !paused;
-    if (paused) {
-      var p = (document.querySelector('[data-i18n="snake.pause"]') || {}).textContent || 'Duraklatıldı';
-      var r = (document.querySelector('[data-i18n="snake.resume"]') || {}).textContent || 'Devam';
-      showOverlay(p, r);
-    } else {
-      hideOverlay();
-    }
   }
 
   function startIfNeeded() {
     if (!running) {
       running = true;
-      paused = false;
-      hideOverlay();
+hideOverlay();
       lastTick = 0;
     }
+
+  function recomputeTick() {
+    // Smooth speed-up that never becomes unplayable:
+    // tick = tickStart * (tickDecay ^ foodsEaten), clamped to tickMin
+    var t = Math.round(tickStart * Math.pow(tickDecay, foodsEaten));
+    tickMs = Math.max(tickMin, t);
+  }
+
   }
 
   function step() {
@@ -290,9 +283,8 @@
       setScore(score + 10);
       spawnFood();
 
-      tickMs = Math.max(tickMin, tickMs - tickStep);
-
-      if (bonusCooldown > 0) bonusCooldown--;
+      recomputeTick();
+if (bonusCooldown > 0) bonusCooldown--;
       maybeSpawnBonus();
     } else if (willEatBonus) {
       foodsEaten++;
@@ -300,9 +292,8 @@
       celebrateBonus();
       bonus = null;
 
-      tickMs = Math.max(tickMin, tickMs - (tickStep + 2));
-
-      if (bonusCooldown > 0) bonusCooldown--;
+      recomputeTick();
+if (bonusCooldown > 0) bonusCooldown--;
       spawnFood();
       maybeSpawnBonus();
     } else {
@@ -373,7 +364,7 @@
   function loop(ts) {
     rafId = window.requestAnimationFrame(loop);
 
-    if (!running || paused) {
+    if (!running) {
       draw();
       return;
     }
@@ -401,9 +392,7 @@
     if (k === 'arrowup' || k === 'w') { e.preventDefault(); pushDir(0, -1); startIfNeeded(); }
     else if (k === 'arrowdown' || k === 's') { e.preventDefault(); pushDir(0, 1); startIfNeeded(); }
     else if (k === 'arrowleft' || k === 'a') { e.preventDefault(); pushDir(-1, 0); startIfNeeded(); }
-    else if (k === 'arrowright' || k === 'd') { e.preventDefault(); pushDir(1, 0); startIfNeeded(); }
-    else if (k === ' ' || k === 'spacebar') { e.preventDefault(); togglePause(); }
-    else if (k === 'enter') { e.preventDefault(); resetGame(); }
+    else if (k === 'arrowright' || k === 'd') { e.preventDefault(); pushDir(1, 0); startIfNeeded(); }    else if (k === 'enter') { e.preventDefault(); resetGame(); }
   }
 
   // Touch swipe/drag on canvas
@@ -486,20 +475,7 @@
         }, { passive: false });
       })(dirBtns[i]);
     }
-
-    // Actions
-    var actBtns = document.querySelectorAll('[data-action]');
-    for (var j = 0; j < actBtns.length; j++) {
-      (function (btn) {
-        btn.addEventListener('pointerdown', function (e) {
-          e.preventDefault();
-          var a = btn.getAttribute('data-action');
-          if (a === 'pause') togglePause();
-          else if (a === 'restart') resetGame();
-          try { if (navigator.vibrate) navigator.vibrate(15); } catch (ex) {}
-        }, { passive: false });
-      })(actBtns[j]);
-    }
+  }
   }
 
   // Init

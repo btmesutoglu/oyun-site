@@ -1,8 +1,8 @@
 /* Snake-specific UI (console-ish, independent from other games) */
 .game-shell{ padding-top: 18px; }
 .snake-wrap{
-  /* Keep the play area from feeling "too wide" on desktop */
-  max-width: 640px;
+  /* Slightly tighter layout so the board feels less "wide" */
+  max-width: 560px;
   margin: 0 auto;
   display:flex;
   flex-direction:column;
@@ -25,12 +25,17 @@
 
 .stage{
   position:relative;
-  max-width: 560px;
+  max-width: 480px;
   margin: 0 auto;
-  border-radius: 22px;
+  border-radius: 14px;
   overflow:hidden;
-  border:1px solid rgba(31,42,58,.9);
-  background: rgba(0,0,0,.25);
+  border:2px solid rgba(148,163,184,.35);
+  background: rgba(2,6,23,.35);
+  box-shadow: 0 10px 30px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.06) inset;
+  background-image:
+    linear-gradient(rgba(148,163,184,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.06) 1px, transparent 1px);
+  background-size: 20px 20px;
   box-shadow: var(--shadow);
 }
 #c{
@@ -181,23 +186,6 @@
 .dpad-btn.right{ grid-column:3; grid-row:2; }
 .dpad-btn.down{ grid-column:2; grid-row:3; }
 
-.touch-actions{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.action-btn{
-  min-width: 140px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border:1px solid rgba(31,42,58,.9);
-  background: rgba(9,12,18,.55);
-  color: var(--text);
-  font-weight: 800;
-  cursor:pointer;
-  user-select:none;
-  -webkit-tap-highlight-color: transparent;
-}
 .action-btn:active{ transform: translateY(1px); }
 
 @media (pointer: coarse){
@@ -207,9 +195,7 @@
 @media (max-width: 420px){
   .touch-row{ flex-direction:column; align-items:stretch; }
   .dpad{ margin: 0 auto; }
-  .touch-actions{ flex-direction:row; justify-content:center; }
-  .action-btn{ min-width: 0; flex:1; }
-}
+    }
 
 
 /* Score celebration */
@@ -227,11 +213,17 @@
     border-radius: 18px;
     border:1px solid rgba(31,42,58,.9);
     background: rgba(11,15,20,.70);
+    backdrop-filter: blur(8px);
   }
-  .dpad-btn{ width: 74px; height: 74px; }
+  .dpad{
+    width: 244px;
+    height: 244px;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 18px;
+  }
+  .dpad-btn{ width: 66px; height: 66px; }
 }
-
-
 /* Bonus score celebration */
 #score.score-bonus{color:#f5c842; text-shadow:0 0 16px rgba(245,200,66,.55); transform:scale(1.08);}
 #score{transition:transform .15s ease, color .15s ease, text-shadow .15s ease;}
@@ -285,20 +277,6 @@
 .dpad-btn.left{position:absolute; left:0; top:50%; transform:translateY(-50%);}
 .dpad-btn.right{position:absolute; right:0; top:50%; transform:translateY(-50%);}
 
-.touch-actions{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.action-btn{
-  min-width: 130px;
-  height: 44px;
-  border-radius: 14px;
-  background: rgba(0,255,209,.10);
-  border: 1px solid rgba(0,255,209,.20);
-  color: #eafffb;
-  font-weight: 800;
-}
 .action-btn:active{transform: translateY(1px);}
 
 @media (min-width: 900px){
