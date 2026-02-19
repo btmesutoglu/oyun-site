@@ -1,78 +1,73 @@
-<!doctype html>
-<html lang="tr" data-title-i18n="snake.title">
+<!DOCTYPE html>
+
+<html data-title-i18n="snake.title" lang="tr">
 <head>
-  <meta charset="utf-8" />
-  <!-- Prevent iOS double-tap zoom while playing -->
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
-  <link rel="stylesheet" href="../../assets/site.css" />
-  <link rel="stylesheet" href="./game.css" />
-  <script src="../../assets/site.js" defer></script>
-  <script src="./game.js" defer></script>
+<meta charset="utf-8"/>
+<!-- Prevent iOS double-tap zoom while playing -->
+<meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" name="viewport"/>
+<link href="../../assets/site.css" rel="stylesheet"/>
+<link href="./game.css" rel="stylesheet"/>
+<script defer="" src="../../assets/site.js"></script>
+<script defer="" src="./game.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <a class="brand" href="../../index.html">
-        <span class="brand-icon" aria-hidden="true">🎮</span>
-        <span data-i18n="site.title">Mini Oyunlar</span>
-      </a>
-
-      <nav class="nav" aria-label="primary">
-        <a href="../../index.html" data-i18n="nav.home">Ana Sayfa</a>
-        <a href="../../index.html" data-i18n="nav.games">Oyunlar</a>
-      </nav>
-
-      <div class="lang" aria-label="language switcher">
-        <button type="button" data-lang="tr" aria-pressed="true" title="Türkçe">
-          <img class="flag" src="../../assets/flags/tr.svg" alt="TR" />
-          <span class="label">TR</span>
-        </button>
-        <button type="button" data-lang="en" aria-pressed="false" title="English">
-          <img class="flag" src="../../assets/flags/en.svg" alt="EN" />
-          <span class="label">EN</span>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <main class="container game-shell">
-    <div class="snake-wrap">
-      <div class="hud">
-        <div class="hud-right">
-          <div class="hud-score"><span data-i18n="snake.score">Skor</span>: <span id="score">0</span></div>
-          <div class="hud-best"><span data-i18n="snake.best">En iyi</span>: <span id="best">0</span></div>
-        </div>
-      </div>
-
-      <div class="stage">
-        <canvas id="c" width="448" height="448" aria-label="snake canvas"></canvas>
-        <div class="overlay" id="overlay" aria-live="polite">
-          <div class="overlay-box">
-            <div class="overlay-title" id="ov-title"> </div>
-            <div class="overlay-sub" id="ov-sub"> </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="controls">
-        <span class="kbd">↑</span><span class="kbd">↓</span><span class="kbd">←</span><span class="kbd">→</span>
-        <span class="sep">·</span>
-        <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span>
-        <span class="sep">·</span>
-      </div>
-
-      <div class="touch" aria-label="touch controls">
-        <div class="touch-hint" data-i18n="snake.touchhint">Telefon: ekranda kaydır veya yön tuşlarına dokun.</div>
-        <div class="touch-row">
-          <div class="dpad" aria-label="direction pad">
-            <button class="dpad-btn up" type="button" data-dir="up" aria-label="Up">▲</button>
-            <button class="dpad-btn left" type="button" data-dir="left" aria-label="Left">◀</button>
-            <button class="dpad-btn right" type="button" data-dir="right" aria-label="Right">▶</button>
-            <button class="dpad-btn down" type="button" data-dir="down" aria-label="Down">▼</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
+<header class="topbar">
+<div class="topbar-inner">
+<a class="brand" href="../../index.html">
+<span aria-hidden="true" class="brand-icon">🎮</span>
+<span data-i18n="site.title">Mini Oyunlar</span>
+</a>
+<nav aria-label="primary" class="nav">
+<a data-i18n="nav.home" href="../../index.html">Ana Sayfa</a>
+<a data-i18n="nav.games" href="../../index.html">Oyunlar</a>
+</nav>
+<div aria-label="language switcher" class="lang">
+<button aria-pressed="true" data-lang="tr" title="Türkçe" type="button">
+<img alt="TR" class="flag" src="../../assets/flags/tr.svg"/>
+<span class="label">TR</span>
+</button>
+<button aria-pressed="false" data-lang="en" title="English" type="button">
+<img alt="EN" class="flag" src="../../assets/flags/en.svg"/>
+<span class="label">EN</span>
+</button>
+</div>
+</div>
+</header>
+<main class="container game-shell">
+<div class="snake-wrap">
+<div class="hud"><div class="hud-left"><div class="hud-title" data-i18n="snake.title">Snake</div></div>
+<div class="hud-right">
+<div class="hud-score"><span data-i18n="snake.score">Skor</span>: <span id="score">0</span></div>
+<div class="hud-best"><span data-i18n="snake.best">En iyi</span>: <span id="best">0</span></div>
+</div>
+</div>
+<div class="stage">
+<canvas aria-label="snake canvas" height="448" id="c" width="448"></canvas>
+<div aria-live="polite" class="overlay" id="overlay">
+<div class="overlay-box">
+<div class="overlay-title" id="ov-title"> </div>
+<div class="overlay-sub" id="ov-sub"> </div>
+</div>
+</div>
+</div>
+<div class="controls">
+<span class="kbd">↑</span><span class="kbd">↓</span><span class="kbd">←</span><span class="kbd">→</span>
+<span class="sep">·</span>
+<span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span>
+<span class="sep">·</span>
+</div>
+<div aria-label="touch controls" class="touch">
+<div class="touch-hint" data-i18n="snake.touchhint">Telefon: ekranda kaydır veya yön tuşlarına dokun.</div>
+<div class="touch-row">
+<div aria-label="direction pad" class="dpad">
+<button aria-label="Up" class="dpad-btn up" data-dir="up" type="button">▲</button>
+<button aria-label="Left" class="dpad-btn left" data-dir="left" type="button">◀</button>
+<button aria-label="Right" class="dpad-btn right" data-dir="right" type="button">▶</button>
+<button aria-label="Down" class="dpad-btn down" data-dir="down" type="button">▼</button>
+</div>
+</div>
+</div>
+</div>
+</main>
 </body>
 </html>

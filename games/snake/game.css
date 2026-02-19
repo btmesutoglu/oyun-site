@@ -10,14 +10,15 @@
 }
 .hud{
   display:flex;
-  align-items:flex-end;
-  justify-content:flex-end;
+  align-items:center;
+  justify-content:space-between;
   gap:16px;
   padding: 12px 14px;
   border:1px solid rgba(31,42,58,.9);
   border-radius: 18px;
   background: rgba(17,24,38,.55);
 }
+.hud-left{display:flex; flex-direction:column; gap:2px;}
 .hud-title{ font-weight:800; font-size:18px; letter-spacing:.2px; }
 .hud-hint{ color: var(--muted); font-size:13px; margin-top:4px; }
 .hud-right{ text-align:right; font-size:14px; color: var(--muted); }
@@ -135,19 +136,19 @@ html, body{ height: 100%; }
 }
 .touch-row{
   display:flex;
-  gap:12px;
+  gap:8px;
   align-items:center;
   justify-content:center;
 }
 .dpad{
-  width: clamp(180px, 62vw, 240px);
+  width: clamp(170px, 58vw, 220px);
   aspect-ratio: 1 / 1;
   height: auto;
   display:grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr;
-  gap: 12px;
-  padding: 14px;
+  gap: 10px;
+  padding: 12px;
   box-sizing: border-box;
   border-radius: 22px;
   border:1px solid rgba(31,42,58,.95);
@@ -159,8 +160,8 @@ html, body{ height: 100%; }
   position:absolute;
   left:50%;
   top:50%;
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   transform: translate(-50%,-50%);
   border-radius: 12px;
   border:1px solid rgba(31,42,58,.95);
@@ -169,6 +170,8 @@ html, body{ height: 100%; }
 }
 .dpad-btn{
   width: 100%;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   height: 100%;
   display:flex;
   align-items:center;
@@ -235,7 +238,7 @@ html, body{ height: 100%; }
   .touch-actions{ flex-direction:row; justify-content:center; }
   .action-btn{ min-width: 0; flex:1; }
   /* Make D-pad a bit more compact on very small screens */
-  .dpad{ width: clamp(150px, 62vw, 200px); aspect-ratio: 1 / 1; height: auto; gap: 10px; padding: 10px; }
+  .dpad{ width: clamp(150px, 62vw, 200px); aspect-ratio: 1 / 1; height: auto; gap: 6px; padding: 8px; }
   .dpad-btn{ font-size: 22px; }
 }
 
@@ -273,3 +276,11 @@ html, body{ height: 100%; }
 }
 
 
+
+/* Mobile HUD compact */
+@media (max-width: 480px){
+  .hud{ padding: 8px 10px; border-radius: 14px; }
+  .hud-title{ font-size: 16px; }
+  .hud-right{ font-size: 13px; }
+  .hud-best{ display:none; }
+}

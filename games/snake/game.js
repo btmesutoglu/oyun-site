@@ -65,7 +65,7 @@
   var dirQueue = [];              // queued directions
   // Slightly larger queue makes turns feel more responsive.
   // (Still prevents "buffering" too many moves.)
-  var maxQueue = 4;
+  var maxQueue = 6;
 
   var food = null;
   var bonus = null;               // {x,y,expiresAt}
@@ -500,19 +500,25 @@
 
   function wireTouchButtons() {
     // D-pad
+    function pressDir(btn, e){
+      if (e) { try { e.preventDefault(); } catch(ex) {} }
+      var d = btn.getAttribute('data-dir');
+      if (d === 'up') pushDir(0, -1);
+      else if (d === 'down') pushDir(0, 1);
+      else if (d === 'left') pushDir(-1, 0);
+      else if (d === 'right') pushDir(1, 0);
+      startIfNeeded();
+      try { if (navigator.vibrate) navigator.vibrate(10); } catch (ex) {}
+    }
+
     var dirBtns = document.querySelectorAll('[data-dir]');
     for (var i = 0; i < dirBtns.length; i++) {
       (function (btn) {
-        btn.addEventListener('pointerdown', function (e) {
-          e.preventDefault();
-          var d = btn.getAttribute('data-dir');
-          if (d === 'up') pushDir(0, -1);
-          else if (d === 'down') pushDir(0, 1);
-          else if (d === 'left') pushDir(-1, 0);
-          else if (d === 'right') pushDir(1, 0);
-          startIfNeeded();
-          try { if (navigator.vibrate) navigator.vibrate(10); } catch (ex) {}
-        }, { passive: false });
+        // Avoid any 300ms delay / scroll interactions on mobile
+        try { btn.style.touchAction = 'none'; } catch(ex) {}
+        btn.addEventListener('pointerdown', function (e) { pressDir(btn, e); }, { passive: false });
+        // Fallback for browsers that don't reliably emit Pointer Events
+        btn.addEventListener('touchstart', function (e) { pressDir(btn, e); }, { passive: false });
       })(dirBtns[i]);
     }
 
