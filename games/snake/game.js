@@ -10,6 +10,30 @@
 (function () {
   'use strict';
 
+  // --- Mobile UX: prevent iOS double-tap zoom while playing ---
+  // (We scope it to the game area so the rest of the site can still behave normally.)
+  var stageEl = document.querySelector('.stage');
+  var touchEl = document.querySelector('.touch');
+  var lastTouchEnd = 0;
+  function preventDoubleTapZoom(el) {
+    if (!el) return;
+    // Block Safari's gesture zoom (pinch/double-tap)
+    el.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+    el.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
+    el.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
+
+    // Block double-tap zoom (common on iOS)
+    el.addEventListener('touchend', function (e) {
+      var now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+  }
+  preventDoubleTapZoom(stageEl);
+  preventDoubleTapZoom(touchEl);
+
   var canvas = document.getElementById('c');
   var ctx = canvas.getContext('2d');
   var scoreEl = document.getElementById('score');
