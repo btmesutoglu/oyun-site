@@ -141,7 +141,7 @@ html, body{ height: 100%; }
   justify-content:center;
 }
 .dpad{
-  width: clamp(170px, 58vw, 220px);
+  width: clamp(190px, 62vw, 250px);
   aspect-ratio: 1 / 1;
   height: auto;
   display:grid;
@@ -223,12 +223,14 @@ html, body{ height: 100%; }
 
 @media (pointer: coarse){
   /* Mobile: prioritize play area + D-pad */
-  /* Hide HUD on mobile to free vertical space */
-  .hud{ display:none; }
+  /* Keep a compact HUD on mobile */
+  .hud{ display:flex; padding: 6px 10px; border-radius: 12px; gap:10px; }
+  .hud-title{ font-size: 14px; }
+  .hud-right{ font-size: 13px; }
 
   /* Slightly smaller play area so D-pad fits on short screens */
   /* Slightly smaller play area so a larger D-pad fits comfortably */
-  .stage{ max-width: min(300px, 84vw); }
+  .stage{ max-width: min(280px, 82vw); }
   .touch{ padding: 8px 10px; }
   .touch-hint{ display:none; }
 }
@@ -239,8 +241,8 @@ html, body{ height: 100%; }
   .touch-actions{ flex-direction:row; justify-content:center; }
   .action-btn{ min-width: 0; flex:1; }
   /* Keep D-pad readable on very small screens */
-  .dpad{ width: clamp(165px, 68vw, 220px); aspect-ratio: 1 / 1; height: auto; gap: 7px; padding: 9px; }
-  .dpad-btn{ font-size: 24px; }
+  .dpad{ width: clamp(185px, 72vw, 245px); aspect-ratio: 1 / 1; height: auto; gap: 7px; padding: 9px; }
+  .dpad-btn{ font-size: 26px; }
 }
 
 
