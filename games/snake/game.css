@@ -227,7 +227,8 @@ html, body{ height: 100%; }
   .hud{ display:none; }
 
   /* Slightly smaller play area so D-pad fits on short screens */
-  .stage{ max-width: min(320px, 86vw); }
+  /* Slightly smaller play area so a larger D-pad fits comfortably */
+  .stage{ max-width: min(300px, 84vw); }
   .touch{ padding: 8px 10px; }
   .touch-hint{ display:none; }
 }
@@ -237,9 +238,9 @@ html, body{ height: 100%; }
   .dpad{ margin: 0 auto; }
   .touch-actions{ flex-direction:row; justify-content:center; }
   .action-btn{ min-width: 0; flex:1; }
-  /* Make D-pad a bit more compact on very small screens */
-  .dpad{ width: clamp(150px, 62vw, 200px); aspect-ratio: 1 / 1; height: auto; gap: 6px; padding: 8px; }
-  .dpad-btn{ font-size: 22px; }
+  /* Keep D-pad readable on very small screens */
+  .dpad{ width: clamp(165px, 68vw, 220px); aspect-ratio: 1 / 1; height: auto; gap: 7px; padding: 9px; }
+  .dpad-btn{ font-size: 24px; }
 }
 
 
