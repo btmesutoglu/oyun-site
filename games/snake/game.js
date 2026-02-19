@@ -227,7 +227,7 @@
   function gameOver() {
     running = false;
 var over = (document.querySelector('[data-i18n="snake.gameover"]') || {}).textContent || 'Oyun bitti';
-    var restart = (document.querySelector('[data-i18n="snake.restart"]') || {}).textContent || 'Tekrar: Enter';
+    var restart = (document.querySelector('[data-i18n="snake.restart"]') || {}).textContent || 'Tekrar: Dokun';
     showOverlay(over, restart);
   }
   }
@@ -392,8 +392,8 @@ if (bonusCooldown > 0) bonusCooldown--;
     if (k === 'arrowup' || k === 'w') { e.preventDefault(); pushDir(0, -1); startIfNeeded(); }
     else if (k === 'arrowdown' || k === 's') { e.preventDefault(); pushDir(0, 1); startIfNeeded(); }
     else if (k === 'arrowleft' || k === 'a') { e.preventDefault(); pushDir(-1, 0); startIfNeeded(); }
-    else if (k === 'arrowright' || k === 'd') { e.preventDefault(); pushDir(1, 0); startIfNeeded(); }    else if (k === 'enter') { e.preventDefault(); resetGame(); }
-  }
+    else if (k === 'arrowright' || k === 'd') { e.preventDefault(); pushDir(1, 0); startIfNeeded(); }
+}
 
   // Touch swipe/drag on canvas
   var touchActive = false;

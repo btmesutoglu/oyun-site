@@ -8,7 +8,7 @@
   <script src="../../assets/site.js" defer></script>
   <script src="./game.js" defer></script>
 </head>
-<body>
+<body tabindex="0">
   <header class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="../../index.html">
@@ -61,11 +61,7 @@
         <span class="kbd">↑</span><span class="kbd">↓</span><span class="kbd">←</span><span class="kbd">→</span>
         <span class="sep">·</span>
         <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span>
-        <span class="sep">·</span>
-        <span class="kbd">Space</span> <span data-i18n="snake.pauseLabel">Pause</span>
-        <span class="sep">·</span>
-        <span class="kbd">Enter</span> <span data-i18n="snake.restartLabel">Restart</span>
-      </div>
+</div>
 
       <div class="touch" aria-label="touch controls">
         <div class="touch-hint" data-i18n="snake.touchhint">Telefon: ekranda kaydır veya yön tuşlarına dokun.</div>
@@ -80,5 +76,10 @@
       </div>
     </div>
   </main>
+  <script>
+  window.addEventListener('load', function () {
+    try { document.body.focus(); } catch (e) {}
+  });
+  </script>
 </body>
 </html>
