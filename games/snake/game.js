@@ -21,7 +21,7 @@
   var BEST_KEY = 'snake_best_v3';
 
   // Grid
-  var GRID = 24; // 24x24 (slightly smaller playfield)
+  var GRID = 28; // 28x28
   var CELL = Math.floor(canvas.width / GRID);
 
   // Visual gap between squares (to avoid "merged" look)
@@ -53,10 +53,11 @@
   var best = 0;
 
   var running = false;
-  var tickStart = 190;            // starts comfy
-  var tickMin = 115;              // do not go faster than this
-  var tickDecay = 0.965;          // exponential easing per food
-  var tickMs = tickStart;
+  var paused = false;
+  var dead = false;
+  var tickMs = 200;               // start slow
+  var tickMin = 110;              // speed cap (avoid "unplayable" fast)
+  var tickStep = 3;               // speed-up per food (gentler)
 
   var rafId = null;
   var lastTick = 0;
@@ -199,13 +200,13 @@
     }, 650);
   }
 
-  function resetGame() {
+  function resetGame(showStartOverlay) {
     foodsEaten = 0;
     bonus = null;
     bonusCooldown = 0;
     dirQueue = [];
     dir = { x: 1, y: 0 };
-    tickMs = tickStart;
+    tickMs = 200;
 
     snake = [
       { x: 8, y: 12 },
@@ -218,34 +219,48 @@
     maybeSpawnBonus();
 
     running = false;
-// Overlay text: use DOM texts (already localized)
-    var title = document.querySelector('[data-i18n="snake.title"]');
-    var hint = document.querySelector('[data-i18n="snake.hint"]');
-    showOverlay(title ? title.textContent : 'Snake', hint ? hint.textContent : '');
+    paused = false;
+    dead = false;
+
+    if (showStartOverlay !== false) {
+      // Overlay text: use DOM texts (already localized)
+      var title = document.querySelector('[data-i18n="snake.title"]');
+      var hint = document.querySelector('[data-i18n="snake.hint"]');
+      showOverlay(title ? title.textContent : 'Snake', hint ? hint.textContent : '');
+    }
   }
 
   function gameOver() {
+    dead = true;
     running = false;
-var over = (document.querySelector('[data-i18n="snake.gameover"]') || {}).textContent || 'Oyun bitti';
-    var restart = (document.querySelector('[data-i18n="snake.restart"]') || {}).textContent || 'Tekrar: Dokun';
+    paused = false;
+    dead = false;
+    var over = (document.querySelector('[data-i18n="snake.gameover"]') || {}).textContent || 'Oyun bitti';
+    var restart = (document.querySelector('[data-i18n="snake.restartAlt"]') || {}).textContent || 'Tekrar oynamak için yön ver';
     showOverlay(over, restart);
   }
+
+  function togglePause() {
+    if (!running) return;
+    paused = !paused;
+    if (paused) {
+      var p = (document.querySelector('[data-i18n="snake.pause"]') || {}).textContent || 'Duraklatıldı';
+      var r = (document.querySelector('[data-i18n="snake.resume"]') || {}).textContent || 'Devam';
+      showOverlay(p, r);
+    } else {
+      hideOverlay();
+    }
   }
 
   function startIfNeeded() {
     if (!running) {
+      // If we died, any input starts a fresh round (no explicit restart button needed)
+      if (dead) { resetGame(false); }
       running = true;
-hideOverlay();
+      paused = false;
+      hideOverlay();
       lastTick = 0;
     }
-
-  function recomputeTick() {
-    // Smooth speed-up that never becomes unplayable:
-    // tick = tickStart * (tickDecay ^ foodsEaten), clamped to tickMin
-    var t = Math.round(tickStart * Math.pow(tickDecay, foodsEaten));
-    tickMs = Math.max(tickMin, t);
-  }
-
   }
 
   function step() {
@@ -283,8 +298,9 @@ hideOverlay();
       setScore(score + 10);
       spawnFood();
 
-      recomputeTick();
-if (bonusCooldown > 0) bonusCooldown--;
+      tickMs = Math.max(tickMin, tickMs - tickStep);
+
+      if (bonusCooldown > 0) bonusCooldown--;
       maybeSpawnBonus();
     } else if (willEatBonus) {
       foodsEaten++;
@@ -292,8 +308,9 @@ if (bonusCooldown > 0) bonusCooldown--;
       celebrateBonus();
       bonus = null;
 
-      recomputeTick();
-if (bonusCooldown > 0) bonusCooldown--;
+      tickMs = Math.max(tickMin, tickMs - (tickStep + 1));
+
+      if (bonusCooldown > 0) bonusCooldown--;
       spawnFood();
       maybeSpawnBonus();
     } else {
@@ -364,7 +381,7 @@ if (bonusCooldown > 0) bonusCooldown--;
   function loop(ts) {
     rafId = window.requestAnimationFrame(loop);
 
-    if (!running) {
+    if (!running || paused) {
       draw();
       return;
     }
@@ -392,8 +409,7 @@ if (bonusCooldown > 0) bonusCooldown--;
     if (k === 'arrowup' || k === 'w') { e.preventDefault(); pushDir(0, -1); startIfNeeded(); }
     else if (k === 'arrowdown' || k === 's') { e.preventDefault(); pushDir(0, 1); startIfNeeded(); }
     else if (k === 'arrowleft' || k === 'a') { e.preventDefault(); pushDir(-1, 0); startIfNeeded(); }
-    else if (k === 'arrowright' || k === 'd') { e.preventDefault(); pushDir(1, 0); startIfNeeded(); }
-}
+    else if (k === 'arrowright' || k === 'd') { e.preventDefault(); pushDir(1, 0); startIfNeeded(); }  }
 
   // Touch swipe/drag on canvas
   var touchActive = false;
@@ -475,7 +491,20 @@ if (bonusCooldown > 0) bonusCooldown--;
         }, { passive: false });
       })(dirBtns[i]);
     }
-  }
+
+    // Actions
+    var actBtns = document.querySelectorAll('[data-action]');
+    for (var j = 0; j < actBtns.length; j++) {
+      (function (btn) {
+        btn.addEventListener('pointerdown', function (e) {
+          e.preventDefault();
+          var a = btn.getAttribute('data-action');
+          if (a === 'pause') togglePause();
+          else if (a === 'restart') resetGame();
+          try { if (navigator.vibrate) navigator.vibrate(15); } catch (ex) {}
+        }, { passive: false });
+      })(actBtns[j]);
+    }
   }
 
   // Init

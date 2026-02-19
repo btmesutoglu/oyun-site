@@ -8,7 +8,7 @@
   <script src="../../assets/site.js" defer></script>
   <script src="./game.js" defer></script>
 </head>
-<body tabindex="0">
+<body>
   <header class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="../../index.html">
@@ -48,7 +48,7 @@
       </div>
 
       <div class="stage">
-        <canvas id="c" width="480" height="480" aria-label="snake canvas"></canvas>
+        <canvas id="c" width="448" height="448" aria-label="snake canvas"></canvas>
         <div class="overlay" id="overlay" aria-live="polite">
           <div class="overlay-box">
             <div class="overlay-title" id="ov-title"> </div>
@@ -61,7 +61,8 @@
         <span class="kbd">↑</span><span class="kbd">↓</span><span class="kbd">←</span><span class="kbd">→</span>
         <span class="sep">·</span>
         <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span>
-</div>
+        <span class="sep">·</span>
+      </div>
 
       <div class="touch" aria-label="touch controls">
         <div class="touch-hint" data-i18n="snake.touchhint">Telefon: ekranda kaydır veya yön tuşlarına dokun.</div>
@@ -72,14 +73,9 @@
             <button class="dpad-btn right" type="button" data-dir="right" aria-label="Right">▶</button>
             <button class="dpad-btn down" type="button" data-dir="down" aria-label="Down">▼</button>
           </div>
-</div>
+        </div>
       </div>
     </div>
   </main>
-  <script>
-  window.addEventListener('load', function () {
-    try { document.body.focus(); } catch (e) {}
-  });
-  </script>
 </body>
 </html>
